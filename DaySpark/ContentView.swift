@@ -379,7 +379,7 @@ struct AnniversaryItemView: View {
     let icon: String
     let color: Color
     var body: some View {
-        HStack {
+        HStack(alignment: .center, spacing: 16) {
             ZStack {
                 Circle()
                     .fill(color.opacity(0.7))
@@ -387,40 +387,42 @@ struct AnniversaryItemView: View {
                 Text(icon)
                     .font(.system(size: 24))
             }
-        VStack(alignment: .leading, spacing: 10) {
-                    Text(type)
-                        .font(.headline)
-                        .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
-                    Text(targetDate)
-                        .font(.subheadline)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(type)
+                    .font(.headline)
+                    .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                Text(targetDate)
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                Spacer(minLength: 0)
+                ProgressView(value: progress)
+                    .accentColor(isFuture ? Color(red: 0.9, green: 0.6, blue: 0.3) : Color(red: 0.4, green: 0.7, blue: 0.4))
+                    .scaleEffect(x: 1, y: 1.5, anchor: .center)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .trailing, spacing: 4) {
+                if isFuture {
+                    Text("还有")
+                        .font(.caption)
                         .foregroundColor(.gray)
+                    Text("\(abs(daysLeft))天")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.3))
+                } else {
+                    Text("已陪伴")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text("\(abs(daysLeft))天")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.4))
                 }
                 Spacer()
-                VStack(alignment: .trailing) {
-                    if isFuture {
-                        Text("还有")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        Text("\(daysLeft)天")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.3))
-                    } else {
-                        Text("已陪伴")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    Text("\(abs(daysLeft))天")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.4))
-                    }
-                }
             }
+        }
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
-        ProgressView(value: progress)
-            .accentColor(isFuture ? Color(red: 0.9, green: 0.6, blue: 0.3) : Color(red: 0.4, green: 0.7, blue: 0.4))
-            .scaleEffect(x: 1, y: 1.5, anchor: .center)
     }
 }
 
