@@ -337,7 +337,14 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showAddSheet) {
-                AddAnniversaryView()
+                AddAnniversaryView(
+                    onDismiss: { showAddSheet = false },
+                    onSave: { event, date, color, icon in
+                        let newItem = AnniversaryItem(id: UUID(), event: event, date: date, color: color, icon: icon)
+                        anniversaryItems.append(newItem)
+                        showAddSheet = false
+                    }
+                )
             }
         }
     }
@@ -401,7 +408,18 @@ struct AnniversaryItemView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .trailing, spacing: 4) {
-                if isFuture {
+                if daysLeft == 0 {
+                    // 完成状态
+                    Text("已达成！")
+                        .font(.caption)
+                        .foregroundColor(Color(red: 1.0, green: 0.7, blue: 0.2))
+                        .padding(.bottom, 2)
+                    Text("这一刻，值得铭记")
+                        .font(.footnote)
+                        .foregroundColor(Color(red: 1.0, green: 0.8, blue: 0.4))
+                        .padding(.bottom, 2)
+                    // "0天"不再显示
+                } else if isFuture {
                     Text("还有")
                         .font(.caption)
                         .foregroundColor(.gray)
