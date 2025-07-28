@@ -481,33 +481,103 @@ struct AnniversaryCardView: View {
     let item: AnniversaryItem
     let onEdit: () -> Void
     let onDelete: () -> Void
+    @State private var offset: CGFloat = 0
+    @State private var isSwiped = false
     
     var body: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-            .fill(item.color.opacity(0.13))
-            .shadow(color: item.color.opacity(0.10), radius: 6, x: 0, y: 3)
-            .frame(height: 112)
-            .overlay(
-                AnniversaryItemView(
-                    type: item.event,
-                    targetDate: DateFormatter.localizedString(from: item.date, dateStyle: .medium, timeStyle: .none),
-                    daysLeft: Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0,
-                    progress: 0.5,
-                    isFuture: item.date > Date(),
-                    icon: item.icon,
-                    color: item.color
-                )
-            )
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+        ZStack {
+            // 背景操作按钮区域
+            HStack(spacing: 0) {
+                Spacer()
+                // 编辑按钮
                 Button(action: onEdit) {
-                    Image(systemName: "pencil")
+                    ZStack {
+                        Rectangle()
+                            .fill(Color.orange)
+                            .frame(width: 60, height: 112)
+                        VStack(spacing: 4) {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                            Text("编辑")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                        }
+                    }
                 }
-                .tint(.orange)
+                .buttonStyle(PlainButtonStyle())
                 
-                Button(role: .destructive, action: onDelete) {
-                    Image(systemName: "trash")
+                // 删除按钮
+                Button(action: onDelete) {
+                    ZStack {
+                        Rectangle()
+                            .fill(Color.red)
+                            .frame(width: 60, height: 112)
+                        VStack(spacing: 4) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                            Text("删除")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                        }
+                    }
                 }
+                .buttonStyle(PlainButtonStyle())
             }
+            .cornerRadius(22, corners: [.topRight, .bottomRight])
+            .offset(x: offset < 0 ? 0 : 120) // 当offset为0时，按钮完全隐藏
+            
+            // 主要内容卡片 - 保持原有宽高
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(item.color.opacity(0.13))
+                .shadow(color: item.color.opacity(0.10), radius: 6, x: 0, y: 3)
+                .frame(height: 112)
+                .overlay(
+                    AnniversaryItemView(
+                        type: item.event,
+                        targetDate: DateFormatter.localizedString(from: item.date, dateStyle: .medium, timeStyle: .none),
+                        daysLeft: Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0,
+                        progress: 0.5,
+                        isFuture: item.date > Date(),
+                        icon: item.icon,
+                        color: item.color
+                    )
+                )
+                .offset(x: offset)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            if value.translation.width < 0 {
+                                // 只允许向左滑动
+                                offset = max(value.translation.width, -120)
+                            }
+                        }
+                        .onEnded { value in
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                if value.translation.width < -60 {
+                                    // 滑动超过一半，显示按钮
+                                    offset = -120
+                                    isSwiped = true
+                                } else {
+                                    // 滑动不足，隐藏按钮
+                                    offset = 0
+                                    isSwiped = false
+                                }
+                            }
+                        }
+                )
+                .onTapGesture {
+                    // 点击时隐藏按钮
+                    if isSwiped {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            offset = 0
+                            isSwiped = false
+                        }
+                    }
+                }
+        }
+        .clipped()
     }
 }
 
