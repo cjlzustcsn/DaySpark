@@ -15,6 +15,253 @@ struct AnniversaryItem: Identifiable, Equatable {
     let icon: String
 }
 
+// HeaderView 组件
+struct HeaderView: View {
+    let mainGradient: LinearGradient
+    let buttonGradient: LinearGradient
+    let onAddButtonTapped: () -> Void
+    
+    var body: some View {
+        HStack {
+            Text("DaySpark")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.3), radius: 2, x: 0, y: 2)
+            Spacer()
+            Button(action: onAddButtonTapped) {
+                ZStack {
+                    buttonGradient
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                    Image(systemName: "plus")
+                        .font(.title2)
+                        .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal)
+        .frame(height: 56)
+        .background(
+            mainGradient
+                .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.10), radius: 8, x: 0, y: 4)
+        )
+    }
+}
+
+// MainContentView 组件
+struct MainContentView: View {
+    let anniversaryItems: [AnniversaryItem]
+    let cardSpacing: CGFloat
+    let cardAreaCornerRadius: CGFloat
+    let floatingButtonSize: CGFloat
+    let floatingButtonPadding: CGFloat
+    let onEdit: (AnniversaryItem) -> Void
+    let onDelete: (AnniversaryItem) -> Void
+    
+    var body: some View {
+        ZStack {
+            Color(.systemBackground)
+                .cornerRadius(cardAreaCornerRadius, corners: [.topLeft, .topRight])
+                .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.10), radius: 8, x: 0, y: -4)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: cardSpacing) {
+                    ForEach(anniversaryItems) { item in
+                        AnniversaryCardView(
+                            item: item,
+                            onEdit: { onEdit(item) },
+                            onDelete: { onDelete(item) }
+                        )
+                    }
+                }
+                .padding(.top, 24)
+                .padding(.horizontal)
+                .padding(.bottom, floatingButtonSize + floatingButtonPadding + 50)
+            }
+        }
+    }
+}
+
+// FloatingButtonView 组件
+struct FloatingButtonView: View {
+    let buttonGradient: LinearGradient
+    let floatingButtonSize: CGFloat
+    let floatingButtonPadding: CGFloat
+    let isAnimatingButton: Bool
+    let onButtonTapped: () -> Void
+    
+    var body: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Button(action: onButtonTapped) {
+                    ZStack {
+                        buttonGradient
+                            .frame(width: floatingButtonSize, height: floatingButtonSize)
+                            .clipShape(Circle())
+                            .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.18), radius: 10, x: 0, y: 6)
+                        Circle()
+                            .stroke(Color.white.opacity(0.15), lineWidth: 8)
+                            .frame(width: floatingButtonSize + 16, height: floatingButtonSize + 16)
+                        Image(systemName: "wand.and.stars")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                    }
+                    .scaleEffect(isAnimatingButton ? 1.25 : 1.0)
+                    .rotationEffect(.degrees(isAnimatingButton ? 20 : 0))
+                    .opacity(isAnimatingButton ? 0.7 : 1.0)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.45), value: isAnimatingButton)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.trailing, floatingButtonPadding)
+                .padding(.bottom, 32)
+                .accessibilityLabel("抽签")
+            }
+        }
+    }
+}
+
+// EncourageCardView 组件
+struct EncourageCardView: View {
+    let encourageText: String
+    let cardAnim: Bool
+    let cardGlow: Bool
+    let cardContentAppear: Bool
+    let buttonOpacity: Double
+    let onDismiss: () -> Void
+    
+    var body: some View {
+        VisualEffectBlur(blurStyle: .systemMaterial)
+            .ignoresSafeArea()
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.25), value: true)
+            .onTapGesture {
+                onDismiss()
+            }
+        VStack {
+            Spacer()
+            // 卡片本体动效
+            ZStack {
+                // 光晕扩散
+                Circle()
+                    .fill(
+                        RadialGradient(gradient: Gradient(colors: [Color(red: 1.0, green: 0.95, blue: 0.7, opacity: 0.7), Color.clear]), center: .center, startRadius: 0, endRadius: 320)
+                    )
+                    .frame(width: 420, height: 420)
+                    .scaleEffect(cardGlow ? 1.18 : 0.7)
+                    .opacity(cardGlow ? 0.8 : 0)
+                    .blur(radius: 24)
+                    .animation(.easeOut(duration: 0.7), value: cardGlow)
+                // 裱起来的画框卡片
+                ZStack {
+                    // 外层金色描边
+                    RoundedRectangle(cornerRadius: 40, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0.98, green: 0.85, blue: 0.45),
+                                    Color(red: 0.95, green: 0.8, blue: 0.5)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 6
+                        )
+                        .shadow(color: Color.yellow.opacity(0.18), radius: 8, x: 0, y: 4)
+                        .frame(width: 240, height: 180)
+                    // 内层卡片本体
+                    RoundedRectangle(cornerRadius: 32, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.976, blue: 0.941),
+                                    Color(red: 1.0, green: 0.898, blue: 0.705)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: Color(red: 0.9, green: 0.8, blue: 0.5, opacity: 0.18), radius: 24, x: 0, y: 12)
+                        .frame(width: 240, height: 180)
+                        .overlay(
+                            // 四角装饰
+                            ZStack {
+                                ForEach(0..<4) { i in
+                                    Image(systemName: "leaf.fill")
+                                        .resizable()
+                                        .frame(width: 18, height: 18)
+                                        .foregroundColor(Color(red: 0.98, green: 0.85, blue: 0.45, opacity: 0.7))
+                                        .rotationEffect(.degrees(Double(i) * 90))
+                                        .offset(x: i == 1 ? 110 : (i == 3 ? -110 : 0), y: i == 0 ? -70 : (i == 2 ? 70 : 0))
+                                }
+                            }
+                        )
+                    // 卡片内容
+                    VStack(spacing: 8) {
+                        Text("\u{201C}")
+                            .font(.system(size: 20, weight: .bold, design: .serif))
+                            .foregroundColor(Color(red: 0.98, green: 0.85, blue: 0.45, opacity: 0.7))
+                            .padding(.top, 2)
+                        Text(encourageText)
+                            .font(.system(size: 26, weight: .semibold, design: .serif))
+                            .italic()
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(Color(red: 0.7, green: 0.4, blue: 0.2))
+                            .lineSpacing(6)
+                            .padding(.horizontal, 8)
+                            .opacity(cardContentAppear ? 1 : 0)
+                            .animation(.easeIn(duration: 0.45).delay(0.22), value: cardContentAppear)
+                        Text("\u{201D}")
+                            .font(.system(size: 20, weight: .bold, design: .serif))
+                            .foregroundColor(Color(red: 0.98, green: 0.85, blue: 0.45, opacity: 0.7))
+                            .padding(.bottom, 2)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .padding(.vertical, 14)
+                    .padding(.horizontal, 10)
+                    .frame(width: 240, height: 180)
+                }
+                .frame(width: 240, height: 180)
+                .scaleEffect(cardAnim ? 1 : 0.7)
+                .rotationEffect(.degrees(cardAnim ? 0 : -16))
+                .opacity(cardAnim ? 1 : 0)
+                .animation(.interpolatingSpring(stiffness: 180, damping: 16), value: cardAnim)
+            }
+            // 按钮只做opacity淡出
+            HStack(spacing: 28) {
+                Button(action: {}) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("分享")
+                    }
+                    .font(.title3)
+                    .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                }
+                .opacity(buttonOpacity)
+                .animation(.easeInOut(duration: 0.25), value: buttonOpacity)
+                Button(action: {}) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.down")
+                        Text("保存")
+                    }
+                    .font(.title3)
+                    .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                }
+                .opacity(buttonOpacity)
+                .animation(.easeInOut(duration: 0.25), value: buttonOpacity)
+            }
+            .padding(.top, 12)
+            Spacer()
+        }
+        .onAppear {
+            // 动画初始化逻辑需要在父组件中处理
+        }
+    }
+}
+
 struct ContentView: View {
     let barCornerRadius: CGFloat = 0 // 标题栏无圆角
     let cardAreaCornerRadius: CGFloat = 16 // 纪念日区域顶部圆角
@@ -66,6 +313,8 @@ struct ContentView: View {
         "别怕，阳光总在风雨后。"
     ]
     @State private var showAddSheet = false
+    @State private var showEditSheet = false
+    @State private var editingItem: AnniversaryItem?
     @State private var anniversaryItems: [AnniversaryItem] = [
         AnniversaryItem(id: UUID(), event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂"),
         AnniversaryItem(id: UUID(), event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉")
@@ -78,32 +327,12 @@ struct ContentView: View {
             ZStack {
                 VStack(spacing: 0) {
                     // 顶部标题栏
-                    HStack {
-                        Text("DaySpark")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2)) // 柔和棕橙
-                            .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.3), radius: 2, x: 0, y: 2)
-                        Spacer()
-                        Button(action: {
+                    HeaderView(
+                        mainGradient: mainGradient,
+                        buttonGradient: buttonGradient,
+                        onAddButtonTapped: {
                             showAddSheet = true
-                        }) {
-                            ZStack {
-                                buttonGradient
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(Circle())
-                                Image(systemName: "plus")
-                                    .font(.title2)
-                                    .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
-                            }
                         }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .padding(.horizontal)
-                    .frame(height: 56)
-                    .background(
-                        mainGradient
-                            .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.10), radius: 8, x: 0, y: 4)
                     )
                     .padding(.top, geometry.safeAreaInsets.top)
                     // 分割线更淡
@@ -112,85 +341,52 @@ struct ContentView: View {
                         .frame(height: 1)
                         .shadow(color: Color.clear, radius: 0)
                     // 纪念日区域最大化
-                    ZStack {
-                        Color(.systemBackground)
-                            .cornerRadius(cardAreaCornerRadius, corners: [.topLeft, .topRight])
-                            .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.10), radius: 8, x: 0, y: -4)
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: cardSpacing) {
-                                ForEach(anniversaryItems) { item in
-                                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                        .fill(item.color.opacity(0.13))
-                                        .shadow(color: item.color.opacity(0.10), radius: 6, x: 0, y: 3)
-                                        .frame(height: 112)
-                                        .overlay(
-                                            AnniversaryItemView(
-                                                type: item.event,
-                                                targetDate: DateFormatter.localizedString(from: item.date, dateStyle: .medium, timeStyle: .none),
-                                                daysLeft: Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0,
-                                                progress: 0.5, // 可后续完善
-                                                isFuture: item.date > Date(),
-                                                icon: item.icon,
-                                                color: item.color
-                                            )
-                                        )
-                                }
+                    MainContentView(
+                        anniversaryItems: anniversaryItems,
+                        cardSpacing: cardSpacing,
+                        cardAreaCornerRadius: cardAreaCornerRadius,
+                        floatingButtonSize: floatingButtonSize,
+                        floatingButtonPadding: floatingButtonPadding,
+                        onEdit: { item in
+                            editingItem = item
+                            showEditSheet = true
+                        },
+                        onDelete: { item in
+                            if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
+                                anniversaryItems.remove(at: index)
                             }
-                            .padding(.top, 24)
-                            .padding(.horizontal)
-                            .padding(.bottom, floatingButtonSize + floatingButtonPadding + geometry.safeAreaInsets.bottom)
                         }
-                    }
+                    )
                     .edgesIgnoringSafeArea(.bottom)
                 }
                 .edgesIgnoringSafeArea(.top)
                 // 悬浮抽签按钮
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            if !isAnimatingButton && !showEncourageCard {
-                                isAnimatingButton = true
-                                // 动效后弹出卡片
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                    encourageText = encourages.randomElement() ?? "你很棒！"
-                                    showEncourageCard = true
-                                    isAnimatingButton = false
-                                }
+                FloatingButtonView(
+                    buttonGradient: buttonGradient,
+                    floatingButtonSize: floatingButtonSize,
+                    floatingButtonPadding: floatingButtonPadding,
+                    isAnimatingButton: isAnimatingButton,
+                    onButtonTapped: {
+                        if !isAnimatingButton && !showEncourageCard {
+                            isAnimatingButton = true
+                            // 动效后弹出卡片
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                encourageText = encourages.randomElement() ?? "你很棒！"
+                                showEncourageCard = true
+                                isAnimatingButton = false
                             }
-                        }) {
-                            ZStack {
-                                buttonGradient
-                                    .frame(width: floatingButtonSize, height: floatingButtonSize)
-                                    .clipShape(Circle())
-                                    .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.18), radius: 10, x: 0, y: 6)
-                                // 光晕效果
-                                Circle()
-                                    .stroke(Color.white.opacity(0.15), lineWidth: 8)
-                                    .frame(width: floatingButtonSize + 16, height: floatingButtonSize + 16)
-                                Image(systemName: "wand.and.stars")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
-                            }
-                            .scaleEffect(isAnimatingButton ? 1.25 : 1.0)
-                            .rotationEffect(.degrees(isAnimatingButton ? 20 : 0))
-                            .opacity(isAnimatingButton ? 0.7 : 1.0)
-                            .animation(.spring(response: 0.35, dampingFraction: 0.45), value: isAnimatingButton)
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(.trailing, floatingButtonPadding)
-                        .padding(.bottom, max(geometry.safeAreaInsets.bottom, 32))
-                        .accessibilityLabel("抽签")
                     }
-                }
+                )
                 // 鼓励语卡片弹窗
                 if showEncourageCard {
-                    VisualEffectBlur(blurStyle: .systemMaterial)
-                        .ignoresSafeArea()
-                        .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.25), value: showEncourageCard)
-                        .onTapGesture {
+                    EncourageCardView(
+                        encourageText: encourageText,
+                        cardAnim: cardAnim,
+                        cardGlow: cardGlow,
+                        cardContentAppear: cardContentAppear,
+                        buttonOpacity: buttonOpacity,
+                        onDismiss: {
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
                                 cardAnim = false
                                 cardGlow = false
@@ -201,122 +397,7 @@ struct ContentView: View {
                                 showEncourageCard = false
                             }
                         }
-                    VStack {
-                        Spacer()
-                        // 卡片本体动效
-                        ZStack {
-                            // 光晕扩散
-                            Circle()
-                                .fill(
-                                    RadialGradient(gradient: Gradient(colors: [Color(red: 1.0, green: 0.95, blue: 0.7, opacity: 0.7), Color.clear]), center: .center, startRadius: 0, endRadius: 320)
-                                )
-                                .frame(width: 420, height: 420)
-                                .scaleEffect(cardGlow ? 1.18 : 0.7)
-                                .opacity(cardGlow ? 0.8 : 0)
-                                .blur(radius: 24)
-                                .animation(.easeOut(duration: 0.7), value: cardGlow)
-                            // 裱起来的画框卡片
-                            ZStack {
-                                // 外层金色描边
-                                RoundedRectangle(cornerRadius: 40, style: .continuous)
-                                    .stroke(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                Color(red: 0.98, green: 0.85, blue: 0.45), // 金色
-                                                Color(red: 0.95, green: 0.8, blue: 0.5)
-                                            ]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 6
-                                    )
-                                    .shadow(color: Color.yellow.opacity(0.18), radius: 8, x: 0, y: 4)
-                                    .frame(width: 240, height: 180)
-                                // 内层卡片本体
-                                RoundedRectangle(cornerRadius: 32, style: .continuous)
-                                    .fill(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                Color(red: 1.0, green: 0.976, blue: 0.941),
-                                                Color(red: 1.0, green: 0.898, blue: 0.705)
-                                            ]),
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                                    .shadow(color: Color(red: 0.9, green: 0.8, blue: 0.5, opacity: 0.18), radius: 24, x: 0, y: 12)
-                                    .frame(width: 240, height: 180)
-                                    .overlay(
-                                        // 四角装饰
-                                        ZStack {
-                                            ForEach(0..<4) { i in
-                                                Image(systemName: "leaf.fill")
-                                                    .resizable()
-                                                    .frame(width: 18, height: 18)
-                                                    .foregroundColor(Color(red: 0.98, green: 0.85, blue: 0.45, opacity: 0.7))
-                                                    .rotationEffect(.degrees(Double(i) * 90))
-                                                    .offset(x: i == 1 ? 110 : (i == 3 ? -110 : 0), y: i == 0 ? -70 : (i == 2 ? 70 : 0))
-                                            }
-                                        }
-                                    )
-                                // 卡片内容
-                                VStack(spacing: 8) {
-                                    Text("\u{201C}")
-                                        .font(.system(size: 20, weight: .bold, design: .serif))
-                                        .foregroundColor(Color(red: 0.98, green: 0.85, blue: 0.45, opacity: 0.7))
-                                        .padding(.top, 2)
-                                    Text(encourageText)
-                                        .font(.system(size: 26, weight: .semibold, design: .serif))
-                                        .italic()
-                                        .multilineTextAlignment(.center)
-                                        .foregroundColor(Color(red: 0.7, green: 0.4, blue: 0.2))
-                                        .lineSpacing(6)
-                                        .padding(.horizontal, 8)
-                                        .opacity(cardContentAppear ? 1 : 0)
-                                        .animation(.easeIn(duration: 0.45).delay(0.22), value: cardContentAppear)
-                                    Text("\u{201D}")
-                                        .font(.system(size: 20, weight: .bold, design: .serif))
-                                        .foregroundColor(Color(red: 0.98, green: 0.85, blue: 0.45, opacity: 0.7))
-                                        .padding(.bottom, 2)
-                                        .frame(maxWidth: .infinity, alignment: .trailing)
-                                }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                                .padding(.vertical, 14)
-                                .padding(.horizontal, 10)
-                                .frame(width: 240, height: 180)
-                            }
-                            .frame(width: 240, height: 180)
-                            .scaleEffect(cardAnim ? 1 : 0.7)
-                            .rotationEffect(.degrees(cardAnim ? 0 : -16))
-                            .opacity(cardAnim ? 1 : 0)
-                            .animation(.interpolatingSpring(stiffness: 180, damping: 16), value: cardAnim)
-                        }
-                        // 按钮只做opacity淡出
-                        HStack(spacing: 28) {
-                            Button(action: {}) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.up")
-                                    Text("分享")
-                                }
-                                .font(.title3)
-                                .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
-                            }
-                            .opacity(buttonOpacity)
-                            .animation(.easeInOut(duration: 0.25), value: buttonOpacity)
-                            Button(action: {}) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.down")
-                                    Text("保存")
-                                }
-                                .font(.title3)
-                                .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
-                            }
-                            .opacity(buttonOpacity)
-                            .animation(.easeInOut(duration: 0.25), value: buttonOpacity)
-                        }
-                        .padding(.top, 12)
-                        Spacer()
-                    }
+                    )
                     .onAppear {
                         cardAnim = false
                         cardGlow = false
@@ -346,6 +427,25 @@ struct ContentView: View {
                     }
                 )
             }
+            .sheet(isPresented: $showEditSheet) {
+                if let editingItem = editingItem {
+                    AddAnniversaryView(
+                        onDismiss: { showEditSheet = false },
+                        onSave: { event, date, color, icon in
+                            if let index = anniversaryItems.firstIndex(where: { $0.id == editingItem.id }) {
+                                anniversaryItems[index] = AnniversaryItem(
+                                    id: editingItem.id,
+                                    event: event,
+                                    date: date,
+                                    color: color,
+                                    icon: icon
+                                )
+                            }
+                            showEditSheet = false
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -373,6 +473,41 @@ fileprivate struct RoundedCorner: Shape {
     func path(in rect: CGRect) -> Path {
         let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
         return Path(path.cgPath)
+    }
+}
+
+// AnniversaryCardView 组件
+struct AnniversaryCardView: View {
+    let item: AnniversaryItem
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(item.color.opacity(0.13))
+            .shadow(color: item.color.opacity(0.10), radius: 6, x: 0, y: 3)
+            .frame(height: 112)
+            .overlay(
+                AnniversaryItemView(
+                    type: item.event,
+                    targetDate: DateFormatter.localizedString(from: item.date, dateStyle: .medium, timeStyle: .none),
+                    daysLeft: Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0,
+                    progress: 0.5,
+                    isFuture: item.date > Date(),
+                    icon: item.icon,
+                    color: item.color
+                )
+            )
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                }
+                .tint(.orange)
+                
+                Button(role: .destructive, action: onDelete) {
+                    Image(systemName: "trash")
+                }
+            }
     }
 }
 
@@ -409,16 +544,10 @@ struct AnniversaryItemView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .trailing, spacing: 4) {
                 if daysLeft == 0 {
-                    // 完成状态
-                    Text("已达成！")
-                        .font(.caption)
+                    Text("已经抵达")
+                        .font(.title3)
+                        .fontWeight(.bold)
                         .foregroundColor(Color(red: 1.0, green: 0.7, blue: 0.2))
-                        .padding(.bottom, 2)
-                    Text("这一刻，值得铭记")
-                        .font(.footnote)
-                        .foregroundColor(Color(red: 1.0, green: 0.8, blue: 0.4))
-                        .padding(.bottom, 2)
-                    // "0天"不再显示
                 } else if isFuture {
                     Text("还有")
                         .font(.caption)
