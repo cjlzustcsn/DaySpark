@@ -63,6 +63,7 @@ struct MainContentView: View {
     let onEdit: (AnniversaryItem) -> Void
     let onDelete: (AnniversaryItem) -> Void
     let onPin: (AnniversaryItem) -> Void
+    let onTap: (AnniversaryItem) -> Void
     
     var body: some View {
         ZStack {
@@ -76,7 +77,8 @@ struct MainContentView: View {
                             item: item,
                             onEdit: { onEdit(item) },
                             onDelete: { onDelete(item) },
-                            onPin: { onPin(item) }
+                            onPin: { onPin(item) },
+                            onTap: { onTap(item) }
                         )
                         .transition(.asymmetric(
                             insertion: .scale.combined(with: .opacity),
@@ -326,6 +328,8 @@ struct ContentView: View {
     @State private var showAddSheet = false
     @State private var showEditSheet = false
     @State private var editingItem: AnniversaryItem?
+    @State private var showDetailSheet = false
+    @State private var selectedDetailItem: AnniversaryItem? = nil
 
     @State private var anniversaryItems: [AnniversaryItem] = {
         let items = [
@@ -407,6 +411,13 @@ struct ContentView: View {
                                         anniversaryItems.insert(updatedItem, at: 0)
                                     }
                                 }
+                            }
+                        },
+                        onTap: { item in
+                            // 点击展开详情页面
+                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                self.selectedDetailItem = item
+                                self.showDetailSheet = true
                             }
                         }
                     )
@@ -526,6 +537,26 @@ struct ContentView: View {
                 )
             }
         }
+        .overlay(
+            Group {
+                if showDetailSheet, let selectedDetailItem = selectedDetailItem {
+                    AnniversaryDetailView(
+                        item: selectedDetailItem,
+                        onDismiss: {
+                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                self.showDetailSheet = false
+                                self.selectedDetailItem = nil
+                            }
+                        }
+                    )
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        ))
+                        .zIndex(1000)
+                }
+            }
+        )
     }
 }
 
@@ -573,6 +604,7 @@ struct AnniversaryCardView: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onPin: () -> Void // 添加置顶功能
+    let onTap: (() -> Void)? // 添加点击展开功能
     @State private var offset: CGFloat = 0
     @State private var isSwiped = false
     
@@ -748,12 +780,15 @@ struct AnniversaryCardView: View {
                         }
                 )
                 .onTapGesture {
-                    // 点击时隐藏编辑区域
+                    // 点击时隐藏编辑区域或展开详情
                     if isSwiped {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             offset = 0
                             isSwiped = false
                         }
+                    } else {
+                        // 展开详情页面
+                        onTap?()
                     }
                 }
         }
@@ -840,4 +875,247 @@ struct AnniversaryItemView: View {
 
 #Preview {
     ContentView()
+}
+
+// 纪念日详情页面
+struct AnniversaryDetailView: View {
+    let item: AnniversaryItem
+    let onDismiss: () -> Void
+    @State private var thoughts: [ThoughtItem] = []
+    @State private var newThought: String = ""
+    @State private var showAddThought = false
+    
+    var body: some View {
+        ZStack {
+            // 背景渐变
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 1.0, green: 0.97, blue: 0.88),
+                    Color(red: 1.0, green: 0.93, blue: 0.75),
+                    Color(red: 1.0, green: 0.98, blue: 0.95)
+                ]),
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // 顶部纪念日卡片区域
+                VStack(spacing: 20) {
+                    // 关闭按钮
+                    HStack {
+                        Button(action: { 
+                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                onDismiss()
+                            }
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.orange.opacity(0.8))
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 10)
+                    
+                    // 纪念日卡片（与主页面完全一致）
+                    AnniversaryCardView(
+                        item: item,
+                        onEdit: { /* 详情页面不提供编辑功能 */ },
+                        onDelete: { /* 详情页面不提供删除功能 */ },
+                        onPin: { /* 详情页面不提供置顶功能 */ },
+                        onTap: { /* 详情页面不提供点击展开功能 */ }
+                    )
+                    .allowsHitTesting(false) // 禁用交互
+                    .padding(.horizontal)
+                }
+                .padding(.bottom, 20)
+                
+                // 时间线区域
+                VStack(spacing: 0) {
+                    // 时间线标题
+                    HStack {
+                        Text("时光记录")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                        Spacer()
+                        Button(action: { showAddThought = true }) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.orange)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 16)
+                    
+                    // 时间线内容
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(thoughts) { thought in
+                                ThoughtItemView(thought: thought)
+                            }
+                            
+                            if thoughts.isEmpty {
+                                // 空状态
+                                VStack(spacing: 12) {
+                                    Image(systemName: "heart.text.square")
+                                        .font(.system(size: 48))
+                                        .foregroundColor(.orange.opacity(0.6))
+                                    Text("还没有记录任何想法")
+                                        .font(.headline)
+                                        .foregroundColor(.gray)
+                                    Text("点击右上角的 + 按钮，记录下你的想法吧")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray.opacity(0.8))
+                                        .multilineTextAlignment(.center)
+                                }
+                                .padding(.vertical, 60)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 100)
+                    }
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(Color.white.opacity(0.95))
+                        .shadow(color: Color.orange.opacity(0.1), radius: 10, x: 0, y: -5)
+                )
+            }
+        }
+        .sheet(isPresented: $showAddThought) {
+            AddThoughtView(
+                onDismiss: { showAddThought = false },
+                onSave: { thoughtText in
+                    let newThought = ThoughtItem(
+                        id: UUID(),
+                        content: thoughtText,
+                        createdAt: Date()
+                    )
+                    thoughts.insert(newThought, at: 0) // 最新的在前面
+                    showAddThought = false
+                }
+            )
+        }
+    }
+}
+
+// 想法数据模型
+struct ThoughtItem: Identifiable {
+    let id: UUID
+    let content: String
+    let createdAt: Date
+}
+
+// 想法项视图
+struct ThoughtItemView: View {
+    let thought: ThoughtItem
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            // 时间线圆点
+            VStack(spacing: 0) {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 12, height: 12)
+                Rectangle()
+                    .fill(Color.orange.opacity(0.3))
+                    .frame(width: 2)
+                    .frame(maxHeight: .infinity)
+            }
+            
+            // 内容卡片
+            VStack(alignment: .leading, spacing: 8) {
+                Text(thought.content)
+                    .font(.body)
+                    .foregroundColor(Color(red: 0.3, green: 0.3, blue: 0.3))
+                    .lineLimit(nil)
+                
+                Text(DateFormatter.localizedString(from: thought.createdAt, dateStyle: .medium, timeStyle: .short))
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.white)
+                    .shadow(color: Color.orange.opacity(0.1), radius: 4, x: 0, y: 2)
+            )
+            
+            Spacer()
+        }
+    }
+}
+
+// 添加想法页面
+struct AddThoughtView: View {
+    let onDismiss: () -> Void
+    let onSave: (String) -> Void
+    @State private var thoughtText: String = ""
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        ZStack {
+            // 背景
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 1.0, green: 0.97, blue: 0.88),
+                    Color(red: 1.0, green: 0.93, blue: 0.75),
+                    Color(red: 1.0, green: 0.98, blue: 0.95)
+                ]),
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                // 标题栏
+                HStack {
+                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(.orange)
+                    }
+                    Spacer()
+                    Text("记录想法")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.orange)
+                    Spacer()
+                    Button(action: {
+                        if !thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            onSave(thoughtText)
+                        }
+                    }) {
+                        Text("保存")
+                            .font(.headline)
+                            .foregroundColor(.orange)
+                    }
+                    .disabled(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(.horizontal)
+                .padding(.top, 10)
+                
+                // 输入区域
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("写下你的想法...")
+                        .font(.headline)
+                        .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                        .padding(.horizontal)
+                    
+                    TextEditor(text: $thoughtText)
+                        .font(.body)
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color.white.opacity(0.95))
+                                .shadow(color: Color.orange.opacity(0.1), radius: 8, x: 0, y: 4)
+                        )
+                        .frame(minHeight: 200)
+                        .padding(.horizontal)
+                }
+                
+                Spacer()
+            }
+        }
+    }
 }
