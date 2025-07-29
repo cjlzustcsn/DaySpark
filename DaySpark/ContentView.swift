@@ -59,6 +59,7 @@ struct MainContentView: View {
     let floatingButtonPadding: CGFloat
     let onEdit: (AnniversaryItem) -> Void
     let onDelete: (AnniversaryItem) -> Void
+    let onPin: (AnniversaryItem) -> Void
     
     var body: some View {
         ZStack {
@@ -67,13 +68,14 @@ struct MainContentView: View {
                 .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.10), radius: 8, x: 0, y: -4)
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: cardSpacing) {
-                    ForEach(anniversaryItems) { item in
-                        AnniversaryCardView(
-                            item: item,
-                            onEdit: { onEdit(item) },
-                            onDelete: { onDelete(item) }
-                        )
-                    }
+                                            ForEach(anniversaryItems) { item in
+                            AnniversaryCardView(
+                                item: item,
+                                onEdit: { onEdit(item) },
+                                onDelete: { onDelete(item) },
+                                onPin: { onPin(item) }
+                            )
+                        }
                 }
                 .padding(.top, 24)
                 .padding(.horizontal)
@@ -262,6 +264,68 @@ struct EncourageCardView: View {
     }
 }
 
+// PinToastView 组件 - 美观的置顶提示
+struct PinToastView: View {
+    let text: String
+    @State private var isVisible = false
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // 置顶图标
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.blue.opacity(0.9),
+                                Color.blue.opacity(0.7)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 32, height: 32)
+                    .shadow(color: Color.blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+            }
+            
+            // 提示文字
+            Text(text)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.leading)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.blue.opacity(0.95),
+                            Color.blue.opacity(0.85)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
+        )
+        .scaleEffect(isVisible ? 1.0 : 0.8)
+        .opacity(isVisible ? 1.0 : 0.0)
+        .offset(y: isVisible ? 0 : 20)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isVisible)
+        .onAppear {
+            isVisible = true
+        }
+    }
+}
+
 struct ContentView: View {
     let barCornerRadius: CGFloat = 0 // 标题栏无圆角
     let cardAreaCornerRadius: CGFloat = 16 // 纪念日区域顶部圆角
@@ -315,6 +379,8 @@ struct ContentView: View {
     @State private var showAddSheet = false
     @State private var showEditSheet = false
     @State private var editingItem: AnniversaryItem?
+    @State private var showPinToast = false // 添加置顶提示状态
+    @State private var pinToastText = "" // 置顶提示文字
     @State private var anniversaryItems: [AnniversaryItem] = [
         AnniversaryItem(id: UUID(), event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂"),
         AnniversaryItem(id: UUID(), event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉")
@@ -354,6 +420,24 @@ struct ContentView: View {
                         onDelete: { item in
                             if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
                                 anniversaryItems.remove(at: index)
+                            }
+                        },
+                        onPin: { item in
+                            // 置顶功能：将项目移到数组开头
+                            if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
+                                let pinnedItem = anniversaryItems.remove(at: index)
+                                anniversaryItems.insert(pinnedItem, at: 0)
+                                
+                                // 显示美观的置顶提示
+                                pinToastText = "「\(pinnedItem.event)」已置顶"
+                                showPinToast = true
+                                
+                                // 2秒后自动隐藏提示
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        showPinToast = false
+                                    }
+                                }
                             }
                         }
                     )
@@ -417,34 +501,44 @@ struct ContentView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showAddSheet) {
+            // 置顶提示 - 显示在顶部
+            if showPinToast {
+                VStack {
+                    PinToastView(text: pinToastText)
+                        .padding(.top, 100) // 距离顶部的距离
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showPinToast)
+            }
+        }
+        .sheet(isPresented: $showAddSheet) {
+            AddAnniversaryView(
+                onDismiss: { showAddSheet = false },
+                onSave: { event, date, color, icon in
+                    let newItem = AnniversaryItem(id: UUID(), event: event, date: date, color: color, icon: icon)
+                    anniversaryItems.append(newItem)
+                    showAddSheet = false
+                }
+            )
+        }
+        .sheet(isPresented: $showEditSheet) {
+            if let editingItem = editingItem {
                 AddAnniversaryView(
-                    onDismiss: { showAddSheet = false },
+                    onDismiss: { showEditSheet = false },
                     onSave: { event, date, color, icon in
-                        let newItem = AnniversaryItem(id: UUID(), event: event, date: date, color: color, icon: icon)
-                        anniversaryItems.append(newItem)
-                        showAddSheet = false
+                        if let index = anniversaryItems.firstIndex(where: { $0.id == editingItem.id }) {
+                            anniversaryItems[index] = AnniversaryItem(
+                                id: editingItem.id,
+                                event: event,
+                                date: date,
+                                color: color,
+                                icon: icon
+                            )
+                        }
+                        showEditSheet = false
                     }
                 )
-            }
-            .sheet(isPresented: $showEditSheet) {
-                if let editingItem = editingItem {
-                    AddAnniversaryView(
-                        onDismiss: { showEditSheet = false },
-                        onSave: { event, date, color, icon in
-                            if let index = anniversaryItems.firstIndex(where: { $0.id == editingItem.id }) {
-                                anniversaryItems[index] = AnniversaryItem(
-                                    id: editingItem.id,
-                                    event: event,
-                                    date: date,
-                                    color: color,
-                                    icon: icon
-                                )
-                            }
-                            showEditSheet = false
-                        }
-                    )
-                }
             }
         }
     }
@@ -481,6 +575,7 @@ struct AnniversaryCardView: View {
     let item: AnniversaryItem
     let onEdit: () -> Void
     let onDelete: () -> Void
+    let onPin: () -> Void // 添加置顶功能
     @State private var offset: CGFloat = 0
     @State private var isSwiped = false
     
@@ -489,6 +584,24 @@ struct AnniversaryCardView: View {
             // 背景操作按钮区域
             HStack(spacing: 0) {
                 Spacer()
+                // 置顶按钮
+                Button(action: onPin) {
+                    ZStack {
+                        Rectangle()
+                            .fill(Color.blue)
+                            .frame(width: 60, height: 112)
+                        VStack(spacing: 4) {
+                            Image(systemName: "pin")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                            Text("置顶")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                
                 // 编辑按钮
                 Button(action: onEdit) {
                     ZStack {
@@ -526,7 +639,7 @@ struct AnniversaryCardView: View {
                 .buttonStyle(PlainButtonStyle())
             }
             .cornerRadius(22, corners: [.topRight, .bottomRight])
-            .offset(x: offset < 0 ? 0 : 120) // 当offset为0时，按钮完全隐藏
+            .offset(x: offset < 0 ? 0 : 180) // 当offset为0时，按钮完全隐藏（三个按钮总共180px）
             
             // 主要内容卡片 - 保持原有宽高
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -550,14 +663,14 @@ struct AnniversaryCardView: View {
                         .onChanged { value in
                             if value.translation.width < 0 {
                                 // 只允许向左滑动
-                                offset = max(value.translation.width, -120)
+                                offset = max(value.translation.width, -180) // 三个按钮总共180px
                             }
                         }
                         .onEnded { value in
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                if value.translation.width < -60 {
+                                if value.translation.width < -90 {
                                     // 滑动超过一半，显示按钮
-                                    offset = -120
+                                    offset = -180
                                     isSwiped = true
                                 } else {
                                     // 滑动不足，隐藏按钮
