@@ -7,12 +7,14 @@
 
 import SwiftUI
 
-struct AnniversaryItem: Identifiable, Equatable {
+// AnniversaryItem 数据结构
+struct AnniversaryItem: Identifiable {
     let id: UUID
     let event: String
     let date: Date
     let color: Color
     let icon: String
+    var isPinned: Bool = false // 添加置顶状态
 }
 
 // HeaderView 组件
@@ -264,67 +266,7 @@ struct EncourageCardView: View {
     }
 }
 
-// PinToastView 组件 - 美观的置顶提示
-struct PinToastView: View {
-    let text: String
-    @State private var isVisible = false
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            // 置顶图标
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.blue.opacity(0.9),
-                                Color.blue.opacity(0.7)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 32, height: 32)
-                    .shadow(color: Color.blue.opacity(0.3), radius: 4, x: 0, y: 2)
-                
-                Image(systemName: "pin.fill")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
-            }
-            
-            // 提示文字
-            Text(text)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.leading)
-            
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.blue.opacity(0.95),
-                            Color.blue.opacity(0.85)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
-        )
-        .scaleEffect(isVisible ? 1.0 : 0.8)
-        .opacity(isVisible ? 1.0 : 0.0)
-        .offset(y: isVisible ? 0 : 20)
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isVisible)
-        .onAppear {
-            isVisible = true
-        }
-    }
-}
+
 
 struct ContentView: View {
     let barCornerRadius: CGFloat = 0 // 标题栏无圆角
@@ -379,8 +321,7 @@ struct ContentView: View {
     @State private var showAddSheet = false
     @State private var showEditSheet = false
     @State private var editingItem: AnniversaryItem?
-    @State private var showPinToast = false // 添加置顶提示状态
-    @State private var pinToastText = "" // 置顶提示文字
+
     @State private var anniversaryItems: [AnniversaryItem] = [
         AnniversaryItem(id: UUID(), event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂"),
         AnniversaryItem(id: UUID(), event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉")
@@ -423,20 +364,20 @@ struct ContentView: View {
                             }
                         },
                         onPin: { item in
-                            // 置顶功能：将项目移到数组开头
+                            // 置顶/取消置顶功能
                             if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
-                                let pinnedItem = anniversaryItems.remove(at: index)
-                                anniversaryItems.insert(pinnedItem, at: 0)
+                                var updatedItem = anniversaryItems[index]
                                 
-                                // 显示美观的置顶提示
-                                pinToastText = "「\(pinnedItem.event)」已置顶"
-                                showPinToast = true
-                                
-                                // 2秒后自动隐藏提示
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        showPinToast = false
-                                    }
+                                if updatedItem.isPinned {
+                                    // 取消置顶：移除置顶状态，移到列表末尾
+                                    updatedItem.isPinned = false
+                                    anniversaryItems.remove(at: index)
+                                    anniversaryItems.append(updatedItem)
+                                } else {
+                                    // 置顶：标记为已置顶，移到数组开头
+                                    updatedItem.isPinned = true
+                                    anniversaryItems.remove(at: index)
+                                    anniversaryItems.insert(updatedItem, at: 0)
                                 }
                             }
                         }
@@ -501,16 +442,6 @@ struct ContentView: View {
                     }
                 }
             }
-            // 置顶提示 - 显示在顶部
-            if showPinToast {
-                VStack {
-                    PinToastView(text: pinToastText)
-                        .padding(.top, 100) // 距离顶部的距离
-                    Spacer()
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showPinToast)
-            }
         }
         .sheet(isPresented: $showAddSheet) {
             AddAnniversaryView(
@@ -570,6 +501,18 @@ fileprivate struct RoundedCorner: Shape {
     }
 }
 
+// 三角形形状 - 用于置顶角标
+fileprivate struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
 // AnniversaryCardView 组件
 struct AnniversaryCardView: View {
     let item: AnniversaryItem
@@ -584,17 +527,17 @@ struct AnniversaryCardView: View {
             // 背景操作按钮区域
             HStack(spacing: 0) {
                 Spacer()
-                // 置顶按钮
+                // 置顶/取消置顶按钮
                 Button(action: onPin) {
                     ZStack {
                         Rectangle()
-                            .fill(Color.blue)
+                            .fill(item.isPinned ? Color.gray : Color.blue)
                             .frame(width: 60, height: 112)
                         VStack(spacing: 4) {
-                            Image(systemName: "pin")
+                            Image(systemName: item.isPinned ? "pin.slash" : "pin")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(.white)
-                            Text("置顶")
+                            Text(item.isPinned ? "取消" : "置顶")
                                 .font(.caption)
                                 .foregroundColor(.white)
                         }
@@ -643,8 +586,53 @@ struct AnniversaryCardView: View {
             
             // 主要内容卡片 - 保持原有宽高
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(item.color.opacity(0.13))
-                .shadow(color: item.color.opacity(0.10), radius: 6, x: 0, y: 3)
+                .fill(
+                    item.isPinned ? 
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.blue.opacity(0.15),
+                            Color.blue.opacity(0.08)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ) : 
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            item.color.opacity(0.13),
+                            item.color.opacity(0.13)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    // 置顶标识 - 左下角
+                    Group {
+                        if item.isPinned {
+                            VStack {
+                                Spacer()
+                                HStack {
+                                    // 简洁的向上箭头角标
+                                    ZStack {
+                                        // 三角形背景
+                                        Triangle()
+                                            .fill(Color.blue.opacity(0.9))
+                                            .frame(width: 20, height: 16)
+                                        // 向上箭头
+                                        Image(systemName: "chevron.up")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .offset(y: -1)
+                                    }
+                                    .padding(.bottom, 8)
+                                    .padding(.leading, 8)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                )
+                .shadow(color: item.isPinned ? Color.blue.opacity(0.15) : item.color.opacity(0.10), radius: 6, x: 0, y: 3)
                 .frame(height: 112)
                 .overlay(
                     AnniversaryItemView(
@@ -654,7 +642,8 @@ struct AnniversaryCardView: View {
                         progress: 0.5,
                         isFuture: item.date > Date(),
                         icon: item.icon,
-                        color: item.color
+                        color: item.color,
+                        isPinned: item.isPinned
                     )
                 )
                 .offset(x: offset)
@@ -703,6 +692,7 @@ struct AnniversaryItemView: View {
     let isFuture: Bool
     let icon: String
     let color: Color
+    let isPinned: Bool
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             ZStack {
@@ -713,9 +703,22 @@ struct AnniversaryItemView: View {
                     .font(.system(size: 24))
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text(type)
-                    .font(.headline)
-                    .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
+                HStack {
+                    Text(type)
+                        .font(.headline)
+                        .foregroundColor(isPinned ? Color.blue : Color(red: 0.8, green: 0.5, blue: 0.2))
+                    if isPinned {
+                        Text("置顶")
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.blue.opacity(0.1))
+                            )
+                    }
+                }
                 Text(targetDate)
                     .font(.subheadline)
                     .foregroundColor(.gray)
