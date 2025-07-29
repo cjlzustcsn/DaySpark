@@ -576,6 +576,29 @@ struct AnniversaryCardView: View {
     @State private var offset: CGFloat = 0
     @State private var isSwiped = false
     
+    // 计算进度条进度
+    private func calculateProgress(for targetDate: Date) -> Double {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // 如果纪念日已经过了，进度条为100%
+        if targetDate <= now {
+            return 1.0
+        }
+        
+        // 计算创建时间到目标日期的总天数
+        let totalDays = calendar.dateComponents([.day], from: item.createdAt, to: targetDate).day ?? 1
+        
+        // 计算从创建时间到现在已经经过的天数
+        let elapsedDays = calendar.dateComponents([.day], from: item.createdAt, to: now).day ?? 0
+        
+        // 计算进度：(已经经过的日期 - 创建日) / (目标日 - 创建日)
+        let progress = Double(elapsedDays) / Double(totalDays)
+        
+        // 确保进度在0-1范围内
+        return max(0.0, min(1.0, progress))
+    }
+    
     var body: some View {
         ZStack {
             // 背景操作按钮区域 - 编辑区域
@@ -694,7 +717,7 @@ struct AnniversaryCardView: View {
                         type: item.event,
                         targetDate: DateFormatter.localizedString(from: item.date, dateStyle: .medium, timeStyle: .none),
                         daysLeft: Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0,
-                        progress: 0.5,
+                        progress: calculateProgress(for: item.date),
                         isFuture: item.date > Date(),
                         icon: item.icon,
                         color: item.color,
@@ -781,6 +804,7 @@ struct AnniversaryItemView: View {
                 ProgressView(value: progress)
                     .accentColor(isFuture ? Color(red: 0.9, green: 0.6, blue: 0.3) : Color(red: 0.4, green: 0.7, blue: 0.4))
                     .scaleEffect(x: 1, y: 1.5, anchor: .center)
+                    .animation(.easeInOut(duration: 0.8), value: progress)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .trailing, spacing: 4) {
