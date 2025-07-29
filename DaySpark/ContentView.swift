@@ -14,6 +14,7 @@ struct AnniversaryItem: Identifiable {
     let date: Date
     let color: Color
     let icon: String
+    let createdAt: Date // 添加创建时间
     var isPinned: Bool = false // 添加置顶状态
 }
 
@@ -70,14 +71,18 @@ struct MainContentView: View {
                 .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.10), radius: 8, x: 0, y: -4)
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: cardSpacing) {
-                                            ForEach(anniversaryItems) { item in
-                            AnniversaryCardView(
-                                item: item,
-                                onEdit: { onEdit(item) },
-                                onDelete: { onDelete(item) },
-                                onPin: { onPin(item) }
-                            )
-                        }
+                    ForEach(anniversaryItems) { item in
+                        AnniversaryCardView(
+                            item: item,
+                            onEdit: { onEdit(item) },
+                            onDelete: { onDelete(item) },
+                            onPin: { onPin(item) }
+                        )
+                        .transition(.asymmetric(
+                            insertion: .scale.combined(with: .opacity),
+                            removal: .scale.combined(with: .opacity)
+                        ))
+                    }
                 }
                 .padding(.top, 24)
                 .padding(.horizontal)
@@ -323,8 +328,8 @@ struct ContentView: View {
     @State private var editingItem: AnniversaryItem?
 
     @State private var anniversaryItems: [AnniversaryItem] = [
-        AnniversaryItem(id: UUID(), event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂"),
-        AnniversaryItem(id: UUID(), event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉")
+        AnniversaryItem(id: UUID(), event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
+        AnniversaryItem(id: UUID(), event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
     ]
     func cardAreaHeight(_ geometry: GeometryProxy) -> CGFloat {
         max(geometry.size.height * 0.72, 320)
@@ -363,25 +368,40 @@ struct ContentView: View {
                             }
                         },
                         onDelete: { item in
-                            if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
-                                anniversaryItems.remove(at: index)
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
+                                    anniversaryItems.remove(at: index)
+                                }
                             }
                         },
                         onPin: { item in
                             // 置顶/取消置顶功能
-                            if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
-                                var updatedItem = anniversaryItems[index]
-                                
-                                if updatedItem.isPinned {
-                                    // 取消置顶：移除置顶状态，移到列表末尾
-                                    updatedItem.isPinned = false
-                                    anniversaryItems.remove(at: index)
-                                    anniversaryItems.append(updatedItem)
-                                } else {
-                                    // 置顶：标记为已置顶，移到数组开头
-                                    updatedItem.isPinned = true
-                                    anniversaryItems.remove(at: index)
-                                    anniversaryItems.insert(updatedItem, at: 0)
+                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
+                                    var updatedItem = anniversaryItems[index]
+                                    
+                                    if updatedItem.isPinned {
+                                        // 取消置顶：移除置顶状态，按创建时间重新排序
+                                        updatedItem.isPinned = false
+                                        anniversaryItems.remove(at: index)
+                                        
+                                        // 按创建时间排序（最新的在前）
+                                        anniversaryItems.append(updatedItem)
+                                        anniversaryItems.sort { item1, item2 in
+                                            if item1.isPinned == item2.isPinned {
+                                                // 如果置顶状态相同，按创建时间排序
+                                                return item1.createdAt > item2.createdAt
+                                            } else {
+                                                // 置顶的排在前面
+                                                return item1.isPinned && !item2.isPinned
+                                            }
+                                        }
+                                    } else {
+                                        // 置顶：标记为已置顶，移到数组开头
+                                        updatedItem.isPinned = true
+                                        anniversaryItems.remove(at: index)
+                                        anniversaryItems.insert(updatedItem, at: 0)
+                                    }
                                 }
                             }
                         }
@@ -451,8 +471,10 @@ struct ContentView: View {
             AddAnniversaryView(
                 onDismiss: { showAddSheet = false },
                 onSave: { event, date, color, icon in
-                    let newItem = AnniversaryItem(id: UUID(), event: event, date: date, color: color, icon: icon)
-                    anniversaryItems.append(newItem)
+                    let newItem = AnniversaryItem(id: UUID(), event: event, date: date, color: color, icon: icon, createdAt: Date())
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        anniversaryItems.append(newItem)
+                    }
                     showAddSheet = false
                 }
             )
@@ -475,11 +497,14 @@ struct ContentView: View {
                                 event: event,
                                 date: date,
                                 color: color,
-                                icon: icon
+                                icon: icon,
+                                createdAt: editingItem.createdAt // 保持创建时间
                             )
                             // 保持置顶状态
                             updatedItem.isPinned = editingItem.isPinned
-                            anniversaryItems[index] = updatedItem
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                anniversaryItems[index] = updatedItem
+                            }
                         }
                         showEditSheet = false
                         self.editingItem = nil // 使用self来访问状态变量
