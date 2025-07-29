@@ -355,8 +355,12 @@ struct ContentView: View {
                         floatingButtonSize: floatingButtonSize,
                         floatingButtonPadding: floatingButtonPadding,
                         onEdit: { item in
+                            // 确保先设置编辑项，再显示sheet
                             editingItem = item
-                            showEditSheet = true
+                            // 使用下一个运行循环来确保状态更新
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showEditSheet = true
+                            }
                         },
                         onDelete: { item in
                             if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
@@ -453,29 +457,36 @@ struct ContentView: View {
                 }
             )
         }
-                    .sheet(isPresented: $showEditSheet) {
-                if let editingItem = editingItem {
-                    AddAnniversaryView(
-                        onDismiss: { showEditSheet = false },
-                        onSave: { event, date, color, icon in
-                            if let index = anniversaryItems.firstIndex(where: { $0.id == editingItem.id }) {
-                                var updatedItem = AnniversaryItem(
-                                    id: editingItem.id,
-                                    event: event,
-                                    date: date,
-                                    color: color,
-                                    icon: icon
-                                )
-                                // 保持置顶状态
-                                updatedItem.isPinned = editingItem.isPinned
-                                anniversaryItems[index] = updatedItem
-                            }
-                            showEditSheet = false
-                        },
-                        editingItem: editingItem
-                    )
-                }
+                            .sheet(isPresented: Binding(
+            get: { showEditSheet && editingItem != nil },
+            set: { showEditSheet = $0 }
+        )) {
+            if let editingItem = editingItem {
+                AddAnniversaryView(
+                    editingItem: editingItem,
+                    onDismiss: { 
+                        showEditSheet = false
+                        self.editingItem = nil // 使用self来访问状态变量
+                    },
+                    onSave: { event, date, color, icon in
+                        if let index = anniversaryItems.firstIndex(where: { $0.id == editingItem.id }) {
+                            var updatedItem = AnniversaryItem(
+                                id: editingItem.id,
+                                event: event,
+                                date: date,
+                                color: color,
+                                icon: icon
+                            )
+                            // 保持置顶状态
+                            updatedItem.isPinned = editingItem.isPinned
+                            anniversaryItems[index] = updatedItem
+                        }
+                        showEditSheet = false
+                        self.editingItem = nil // 使用self来访问状态变量
+                    }
+                )
             }
+        }
     }
 }
 

@@ -5,10 +5,30 @@ struct AddAnniversaryView: View {
     var onSave: ((_ event: String, _ date: Date, _ color: Color, _ icon: String) -> Void)? = nil
     var editingItem: AnniversaryItem? = nil // 添加编辑项参数
     @Environment(\.presentationMode) var presentationMode
-    @State private var event: String = ""
-    @State private var date: Date = Date()
-    @State private var selectedColor: Color = .orange
-    @State private var selectedIcon: String = "🎂"
+    @State private var event: String
+    @State private var date: Date
+    @State private var selectedColor: Color
+    @State private var selectedIcon: String
+    
+    // 初始化状态变量
+    init(editingItem: AnniversaryItem? = nil, onDismiss: (() -> Void)? = nil, onSave: ((_ event: String, _ date: Date, _ color: Color, _ icon: String) -> Void)? = nil) {
+        self.editingItem = editingItem
+        self.onDismiss = onDismiss
+        self.onSave = onSave
+        
+        // 根据编辑模式初始化状态
+        if let editingItem = editingItem {
+            _event = State(initialValue: editingItem.event)
+            _date = State(initialValue: editingItem.date)
+            _selectedColor = State(initialValue: editingItem.color)
+            _selectedIcon = State(initialValue: editingItem.icon)
+        } else {
+            _event = State(initialValue: "")
+            _date = State(initialValue: Date())
+            _selectedColor = State(initialValue: .orange)
+            _selectedIcon = State(initialValue: "🎂")
+        }
+    }
     // 10个主题色
     let colors: [Color] = [
         .orange, .yellow, .pink, .blue, .green, .purple, .red, .teal, .mint, .indigo
@@ -216,15 +236,6 @@ struct AddAnniversaryView: View {
                         .padding(.bottom, 8)
                 }
                 .padding(.bottom, 24)
-            }
-        }
-        .onAppear {
-            // 如果是编辑模式，初始化数据
-            if let editingItem = editingItem {
-                event = editingItem.event
-                date = editingItem.date
-                selectedColor = editingItem.color
-                selectedIcon = editingItem.icon
             }
         }
     }
