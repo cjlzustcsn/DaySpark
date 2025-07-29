@@ -327,10 +327,14 @@ struct ContentView: View {
     @State private var showEditSheet = false
     @State private var editingItem: AnniversaryItem?
 
-    @State private var anniversaryItems: [AnniversaryItem] = [
-        AnniversaryItem(id: UUID(), event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
-        AnniversaryItem(id: UUID(), event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
-    ]
+    @State private var anniversaryItems: [AnniversaryItem] = {
+        let items = [
+            AnniversaryItem(id: UUID(), event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
+            AnniversaryItem(id: UUID(), event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
+        ]
+        // 按创建时间排序（最新的在前）
+        return items.sorted { $0.createdAt > $1.createdAt }
+    }()
     func cardAreaHeight(_ geometry: GeometryProxy) -> CGFloat {
         max(geometry.size.height * 0.72, 320)
     }
@@ -474,6 +478,16 @@ struct ContentView: View {
                     let newItem = AnniversaryItem(id: UUID(), event: event, date: date, color: color, icon: icon, createdAt: Date())
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                         anniversaryItems.append(newItem)
+                        // 按创建时间重新排序（最新的在前）
+                        anniversaryItems.sort { item1, item2 in
+                            if item1.isPinned == item2.isPinned {
+                                // 如果置顶状态相同，按创建时间排序
+                                return item1.createdAt > item2.createdAt
+                            } else {
+                                // 置顶的排在前面
+                                return item1.isPinned && !item2.isPinned
+                            }
+                        }
                     }
                     showAddSheet = false
                 }
