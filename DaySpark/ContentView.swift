@@ -142,6 +142,17 @@ struct EncourageCardView: View {
     let cardContentAppear: Bool
     let buttonOpacity: Double
     let onDismiss: () -> Void
+    let onSave: (() -> Void)?
+    
+    init(encourageText: String, cardAnim: Bool, cardGlow: Bool, cardContentAppear: Bool, buttonOpacity: Double, onDismiss: @escaping () -> Void, onSave: (() -> Void)? = nil) {
+        self.encourageText = encourageText
+        self.cardAnim = cardAnim
+        self.cardGlow = cardGlow
+        self.cardContentAppear = cardContentAppear
+        self.buttonOpacity = buttonOpacity
+        self.onDismiss = onDismiss
+        self.onSave = onSave
+    }
     
     var body: some View {
         VisualEffectBlur(blurStyle: .systemMaterial)
@@ -253,7 +264,7 @@ struct EncourageCardView: View {
                 }
                 .opacity(buttonOpacity)
                 .animation(.easeInOut(duration: 0.25), value: buttonOpacity)
-                Button(action: {}) {
+                Button(action: { onSave?() }) {
                     HStack {
                         Image(systemName: "square.and.arrow.down")
                         Text("保存")
@@ -308,23 +319,7 @@ struct ContentView: View {
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
-    @State private var showEncourageCard = false
-    @State private var encourageText = ""
-    @State private var isAnimatingButton = false
-    @State private var cardAnim = false
-    @State private var cardGlow = false
-    @State private var cardContentAppear = false
-    @State private var buttonOpacity: Double = 1
-    // 临时鼓励语
-    let encourages = [
-        "你很棒！",
-        "再坚持一下，明天会更好！",
-        "相信自己，你值得被爱。",
-        "每一天都值得期待。",
-        "你的努力终将被看到。",
-        "温柔以待自己。",
-        "别怕，阳光总在风雨后。"
-    ]
+    // 抽签功能已移动到详情页面
     @State private var showAddSheet = false
     @State private var showEditSheet = false
     @State private var editingItem: AnniversaryItem?
@@ -424,62 +419,7 @@ struct ContentView: View {
                     .edgesIgnoringSafeArea(.bottom)
                 }
                 .edgesIgnoringSafeArea(.top)
-                // 悬浮抽签按钮
-                FloatingButtonView(
-                    buttonGradient: buttonGradient,
-                    floatingButtonSize: floatingButtonSize,
-                    floatingButtonPadding: floatingButtonPadding,
-                    isAnimatingButton: isAnimatingButton,
-                    onButtonTapped: {
-                        if !isAnimatingButton && !showEncourageCard {
-                            isAnimatingButton = true
-                            // 动效后弹出卡片
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                encourageText = encourages.randomElement() ?? "你很棒！"
-                                showEncourageCard = true
-                                isAnimatingButton = false
-                            }
-                        }
-                    }
-                )
-                // 鼓励语卡片弹窗
-                if showEncourageCard {
-                    EncourageCardView(
-                        encourageText: encourageText,
-                        cardAnim: cardAnim,
-                        cardGlow: cardGlow,
-                        cardContentAppear: cardContentAppear,
-                        buttonOpacity: buttonOpacity,
-                        onDismiss: {
-                            withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
-                                cardAnim = false
-                                cardGlow = false
-                                cardContentAppear = false
-                                buttonOpacity = 0
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                showEncourageCard = false
-                            }
-                        }
-                    )
-                    .onAppear {
-                        cardAnim = false
-                        cardGlow = false
-                        cardContentAppear = false
-                        buttonOpacity = 1
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            withAnimation(.interpolatingSpring(stiffness: 180, damping: 16)) {
-                                cardAnim = true
-                            }
-                            withAnimation(.easeOut(duration: 0.7)) {
-                                cardGlow = true
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-                                cardContentAppear = true
-                            }
-                        }
-                    }
-                }
+                // 悬浮抽签按钮 - 已移动到详情页面
             }
         }
         .sheet(isPresented: $showAddSheet) {
@@ -885,6 +825,26 @@ struct AnniversaryDetailView: View {
     @State private var newThought: String = ""
     @State private var showAddThought = false
     
+    // 抽签相关状态
+    @State private var showEncourageCard = false
+    @State private var encourageText = ""
+    @State private var isAnimatingButton = false
+    @State private var cardAnim = false
+    @State private var cardGlow = false
+    @State private var cardContentAppear = false
+    @State private var buttonOpacity: Double = 1
+    
+    // 鼓励语
+    let encourages = [
+        "你很棒！",
+        "再坚持一下，明天会更好！",
+        "相信自己，你值得被爱。",
+        "每一天都值得期待。",
+        "你的努力终将被看到。",
+        "温柔以待自己。",
+        "别怕，阳光总在风雨后。"
+    ]
+    
     var body: some View {
         ZStack {
             // 背景渐变
@@ -981,6 +941,98 @@ struct AnniversaryDetailView: View {
                         .fill(Color.white.opacity(0.95))
                         .shadow(color: Color.orange.opacity(0.1), radius: 10, x: 0, y: -5)
                 )
+                
+                // 悬浮抽签按钮
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        FloatingButtonView(
+                            buttonGradient: LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.855, blue: 0.725),
+                                    Color(red: 1.0, green: 0.898, blue: 0.705)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            floatingButtonSize: 56,
+                            floatingButtonPadding: 24,
+                            isAnimatingButton: isAnimatingButton,
+                            onButtonTapped: {
+                                if !isAnimatingButton && !showEncourageCard {
+                                    isAnimatingButton = true
+                                    // 动效后弹出卡片
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                        encourageText = encourages.randomElement() ?? "你很棒！"
+                                        showEncourageCard = true
+                                        isAnimatingButton = false
+                                    }
+                                }
+                            }
+                        )
+                    }
+                    .padding(.bottom, 100)
+                }
+            }
+            
+            // 鼓励语卡片弹窗
+            if showEncourageCard {
+                EncourageCardView(
+                    encourageText: encourageText,
+                    cardAnim: cardAnim,
+                    cardGlow: cardGlow,
+                    cardContentAppear: cardContentAppear,
+                    buttonOpacity: buttonOpacity,
+                    onDismiss: {
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
+                            cardAnim = false
+                            cardGlow = false
+                            cardContentAppear = false
+                            buttonOpacity = 0
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showEncourageCard = false
+                        }
+                    },
+                    onSave: {
+                        // 保存抽签结果到时间线
+                        let newThought = ThoughtItem(
+                            id: UUID(),
+                            content: "✨ 今日抽签：\(encourageText)",
+                            createdAt: Date()
+                        )
+                        thoughts.insert(newThought, at: 0) // 最新的在前面
+                        
+                        // 关闭卡片
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
+                            cardAnim = false
+                            cardGlow = false
+                            cardContentAppear = false
+                            buttonOpacity = 0
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showEncourageCard = false
+                        }
+                    }
+                )
+                .onAppear {
+                    cardAnim = false
+                    cardGlow = false
+                    cardContentAppear = false
+                    buttonOpacity = 1
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        withAnimation(.interpolatingSpring(stiffness: 180, damping: 16)) {
+                            cardAnim = true
+                        }
+                        withAnimation(.easeOut(duration: 0.7)) {
+                            cardGlow = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                            cardContentAppear = true
+                        }
+                    }
+                }
             }
         }
         .sheet(isPresented: $showAddThought) {
