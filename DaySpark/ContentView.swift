@@ -453,25 +453,29 @@ struct ContentView: View {
                 }
             )
         }
-        .sheet(isPresented: $showEditSheet) {
-            if let editingItem = editingItem {
-                AddAnniversaryView(
-                    onDismiss: { showEditSheet = false },
-                    onSave: { event, date, color, icon in
-                        if let index = anniversaryItems.firstIndex(where: { $0.id == editingItem.id }) {
-                            anniversaryItems[index] = AnniversaryItem(
-                                id: editingItem.id,
-                                event: event,
-                                date: date,
-                                color: color,
-                                icon: icon
-                            )
-                        }
-                        showEditSheet = false
-                    }
-                )
+                    .sheet(isPresented: $showEditSheet) {
+                if let editingItem = editingItem {
+                    AddAnniversaryView(
+                        onDismiss: { showEditSheet = false },
+                        onSave: { event, date, color, icon in
+                            if let index = anniversaryItems.firstIndex(where: { $0.id == editingItem.id }) {
+                                var updatedItem = AnniversaryItem(
+                                    id: editingItem.id,
+                                    event: event,
+                                    date: date,
+                                    color: color,
+                                    icon: icon
+                                )
+                                // 保持置顶状态
+                                updatedItem.isPinned = editingItem.isPinned
+                                anniversaryItems[index] = updatedItem
+                            }
+                            showEditSheet = false
+                        },
+                        editingItem: editingItem
+                    )
+                }
             }
-        }
     }
 }
 
@@ -524,7 +528,7 @@ struct AnniversaryCardView: View {
     
     var body: some View {
         ZStack {
-            // 背景操作按钮区域
+            // 背景操作按钮区域 - 抽屉式编辑区域
             HStack(spacing: 0) {
                 Spacer()
                 // 置顶/取消置顶按钮
@@ -582,9 +586,9 @@ struct AnniversaryCardView: View {
                 .buttonStyle(PlainButtonStyle())
             }
             .cornerRadius(22, corners: [.topRight, .bottomRight])
-            .offset(x: offset < 0 ? 0 : 180) // 当offset为0时，按钮完全隐藏（三个按钮总共180px）
+            .offset(x: offset < 0 ? 0 : 180) // 当offset为0时，编辑区域完全隐藏
             
-            // 主要内容卡片 - 保持原有宽高
+            // 主要内容卡片 - 会被截断
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(
                     item.isPinned ? 
@@ -658,11 +662,11 @@ struct AnniversaryCardView: View {
                         .onEnded { value in
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 if value.translation.width < -90 {
-                                    // 滑动超过一半，显示按钮
+                                    // 滑动超过一半，显示编辑区域
                                     offset = -180
                                     isSwiped = true
                                 } else {
-                                    // 滑动不足，隐藏按钮
+                                    // 滑动不足，隐藏编辑区域
                                     offset = 0
                                     isSwiped = false
                                 }
@@ -670,7 +674,7 @@ struct AnniversaryCardView: View {
                         }
                 )
                 .onTapGesture {
-                    // 点击时隐藏按钮
+                    // 点击时隐藏编辑区域
                     if isSwiped {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             offset = 0
@@ -679,7 +683,7 @@ struct AnniversaryCardView: View {
                     }
                 }
         }
-        .clipped()
+        .clipped() // 确保超出部分被截断
     }
 }
 
