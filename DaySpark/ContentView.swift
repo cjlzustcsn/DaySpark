@@ -528,10 +528,10 @@ struct AnniversaryCardView: View {
     
     var body: some View {
         ZStack {
-            // 背景操作按钮区域 - 抽屉式编辑区域
+            // 背景操作按钮区域 - 编辑区域
             HStack(spacing: 0) {
                 Spacer()
-                // 置顶/取消置顶按钮
+                // 置顶/取消置顶按钮 - 左侧与纪念日卡片贴合
                 Button(action: onPin) {
                     ZStack {
                         Rectangle()
@@ -548,6 +548,7 @@ struct AnniversaryCardView: View {
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
+                .cornerRadius(22, corners: [.topLeft, .bottomLeft]) // 左侧圆角与纪念日卡片贴合
                 
                 // 编辑按钮
                 Button(action: onEdit) {
@@ -585,10 +586,10 @@ struct AnniversaryCardView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
             }
-            .cornerRadius(22, corners: [.topRight, .bottomRight])
-            .offset(x: offset < 0 ? 0 : 180) // 当offset为0时，编辑区域完全隐藏
+            .cornerRadius(22, corners: [.topRight, .bottomRight]) // 整体右侧圆角
+            .offset(x: offset < 0 ? 0 : 180) // 编辑区域初始隐藏，左划时出现
             
-            // 主要内容卡片 - 会被截断
+            // 纪念日卡片 - 宽度不变，只移动位置
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(
                     item.isPinned ? 
@@ -650,12 +651,12 @@ struct AnniversaryCardView: View {
                         isPinned: item.isPinned
                     )
                 )
-                .offset(x: offset)
+                .offset(x: offset) // 纪念日卡片跟随左划移动
                 .gesture(
                     DragGesture()
                         .onChanged { value in
                             if value.translation.width < 0 {
-                                // 只允许向左滑动
+                                // 只允许向左滑动，纪念日卡片跟手平移
                                 offset = max(value.translation.width, -180) // 三个按钮总共180px
                             }
                         }
