@@ -816,7 +816,6 @@ struct AnniversaryItemView: View {
 #Preview {
     ContentView()
 }
-
 // 纪念日详情页面
 struct AnniversaryDetailView: View {
     let item: AnniversaryItem
@@ -824,6 +823,8 @@ struct AnniversaryDetailView: View {
     @State private var thoughts: [ThoughtItem] = []
     @State private var newThought: String = ""
     @State private var showAddThought = false
+    @State private var showEditThought = false
+    @State private var editingThought: ThoughtItem?
     
     // 抽签相关状态
     @State private var showEncourageCard = false
@@ -930,11 +931,22 @@ struct AnniversaryDetailView: View {
                     ScrollView {
                         LazyVStack(spacing: 16) {
                             ForEach(thoughts) { thought in
-                                ThoughtItemView(thought: thought)
-                                    .transition(.asymmetric(
-                                        insertion: .scale(scale: 0.9).combined(with: .opacity),
-                                        removal: .scale(scale: 0.8).combined(with: .opacity)
-                                    ))
+                                ThoughtItemView(
+                                    thought: thought,
+                                    onEdit: { editingThought in
+                                        self.editingThought = editingThought
+                                        showEditThought = true
+                                    },
+                                    onDelete: { deletingThought in
+                                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                            thoughts.removeAll { $0.id == deletingThought.id }
+                                        }
+                                    }
+                                )
+                                .transition(.asymmetric(
+                                    insertion: .scale(scale: 0.9).combined(with: .opacity),
+                                    removal: .scale(scale: 0.8).combined(with: .opacity)
+                                ))
                             }
                             
                             if thoughts.isEmpty {
@@ -1083,6 +1095,32 @@ struct AnniversaryDetailView: View {
                 }
             )
         }
+        .sheet(isPresented: Binding(
+            get: { showEditThought && editingThought != nil },
+            set: { showEditThought = $0 }
+        )) {
+            if let editingThought = editingThought {
+                EditThoughtView(
+                    thought: editingThought,
+                    onDismiss: {
+                        showEditThought = false
+                        self.editingThought = nil
+                    },
+                    onSave: { updatedContent in
+                        if let index = thoughts.firstIndex(where: { $0.id == editingThought.id }) {
+                            let updatedThought = ThoughtItem(
+                                id: editingThought.id,
+                                content: updatedContent,
+                                createdAt: editingThought.createdAt
+                            )
+                            thoughts[index] = updatedThought
+                        }
+                        showEditThought = false
+                        self.editingThought = nil
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -1096,6 +1134,11 @@ struct ThoughtItem: Identifiable {
 // 想法项视图
 struct ThoughtItemView: View {
     let thought: ThoughtItem
+    let onEdit: (ThoughtItem) -> Void
+    let onDelete: (ThoughtItem) -> Void
+    
+    @State private var showActionSheet = false
+    @State private var showDeleteAlert = false
     
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
@@ -1103,44 +1146,183 @@ struct ThoughtItemView: View {
             VStack(spacing: 0) {
                 ZStack {
                     Circle()
-                        .fill(Color.orange.opacity(0.15))
-                        .frame(width: 24, height: 24)
+                        .fill(Color.orange.opacity(0.12))
+                        .frame(width: 28, height: 28)
                     Circle()
                         .fill(Color.orange)
-                        .frame(width: 10, height: 10)
+                        .frame(width: 12, height: 12)
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 4, height: 4)
                 }
                 Rectangle()
-                    .fill(Color.orange.opacity(0.12))
-                    .frame(width: 1.5)
+                    .fill(Color.orange.opacity(0.08))
+                    .frame(width: 2)
                     .frame(maxHeight: .infinity)
             }
             
             // 内容卡片 - 更符合iOS设计
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text(thought.content)
                     .font(.system(size: 16, weight: .regular))
                     .foregroundColor(.primary)
                     .lineLimit(nil)
                     .multilineTextAlignment(.leading)
+                    .lineSpacing(2)
                 
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Image(systemName: "clock")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(.secondary)
-                    Text(DateFormatter.localizedString(from: thought.createdAt, dateStyle: .medium, timeStyle: .short))
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.secondary)
+                    Text(DateFormatter.localizedString(from: thought.createdAt, dateStyle: .medium, timeStyle: .short))
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.secondary)
                     Spacer()
+                    
+                    // 操作按钮 - 更优雅的设计
+                    Button(action: { showActionSheet = true }) {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundColor(.secondary)
+                            .frame(width: 28, height: 28)
+                            .background(
+                                Circle()
+                                    .fill(Color.secondary.opacity(0.08))
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .scaleEffect(showActionSheet ? 0.9 : 1.0)
+                    .animation(.easeInOut(duration: 0.1), value: showActionSheet)
                 }
             }
-            .padding(18)
+            .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(.regularMaterial)
-                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+                    .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
             )
             
             Spacer()
+        }
+        .confirmationDialog("选择操作", isPresented: $showActionSheet, titleVisibility: .hidden) {
+            Button(action: { onEdit(thought) }) {
+                HStack {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 16, weight: .medium))
+                    Text("编辑")
+                        .font(.system(size: 16, weight: .regular))
+                }
+            }
+            
+            Button("删除", role: .destructive) {
+                showDeleteAlert = true
+            }
+            
+            Button("取消", role: .cancel) { }
+        }
+        .alert("确认删除", isPresented: $showDeleteAlert) {
+            Button("删除", role: .destructive) {
+                onDelete(thought)
+            }
+            Button("取消", role: .cancel) { }
+        } message: {
+            Text("确定要删除这条记录吗？此操作无法撤销。")
+        }
+    }
+}
+
+// 编辑想法页面
+struct EditThoughtView: View {
+    let thought: ThoughtItem
+    let onDismiss: () -> Void
+    let onSave: (String) -> Void
+    @State private var thoughtText: String
+    @Environment(\.presentationMode) var presentationMode
+    
+    init(thought: ThoughtItem, onDismiss: @escaping () -> Void, onSave: @escaping (String) -> Void) {
+        self.thought = thought
+        self.onDismiss = onDismiss
+        self.onSave = onSave
+        self._thoughtText = State(initialValue: thought.content)
+    }
+    
+    var body: some View {
+        ZStack {
+            // 背景 - 更柔和的配色
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.98, green: 0.96, blue: 0.92),
+                    Color(red: 0.95, green: 0.92, blue: 0.85),
+                    Color(red: 0.97, green: 0.94, blue: 0.88)
+                ]),
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // 导航栏 - 更符合iOS设计
+                HStack {
+                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .medium))
+                            Text("取消")
+                                .font(.system(size: 17, weight: .regular))
+                        }
+                        .foregroundColor(.primary)
+                    }
+                    Spacer()
+                    Text("编辑想法")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Button(action: {
+                        if !thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            onSave(thoughtText)
+                        }
+                    }) {
+                        Text("保存")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : .orange)
+                    }
+                    .disabled(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea()
+                )
+                
+                // 输入区域
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("编辑你的想法")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                        Text("修改下此刻的感受和想法")
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    
+                    TextEditor(text: $thoughtText)
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundColor(.primary)
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(.regularMaterial)
+                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+                        )
+                        .frame(minHeight: 200)
+                        .padding(.horizontal, 20)
+                    
+                    Spacer()
+                }
+            }
         }
     }
 }
@@ -1232,3 +1414,4 @@ struct AddThoughtView: View {
         }
     }
 }
+
