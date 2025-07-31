@@ -847,36 +847,54 @@ struct AnniversaryDetailView: View {
     
     var body: some View {
         ZStack {
-            // 背景渐变
+            // 背景渐变 - 更柔和的配色
             LinearGradient(
                 gradient: Gradient(colors: [
-                    Color(red: 1.0, green: 0.97, blue: 0.88),
-                    Color(red: 1.0, green: 0.93, blue: 0.75),
-                    Color(red: 1.0, green: 0.98, blue: 0.95)
+                    Color(red: 0.98, green: 0.96, blue: 0.92),
+                    Color(red: 0.95, green: 0.92, blue: 0.85),
+                    Color(red: 0.97, green: 0.94, blue: 0.88)
                 ]),
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // 顶部纪念日卡片区域 - 固定高度
-                VStack(spacing: 16) {
-                    // 关闭按钮
-                    HStack {
-                        Button(action: { 
-                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                onDismiss()
-                            }
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.orange.opacity(0.8))
+                // 顶部导航栏 - 更符合iOS设计
+                HStack {
+                    Button(action: { 
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            onDismiss()
                         }
-                        Spacer()
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .medium))
+                            Text("返回")
+                                .font(.system(size: 17, weight: .regular))
+                        }
+                        .foregroundColor(.primary)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 16)
-                    
+                    Spacer()
+                    Text("详情")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Button(action: { showAddThought = true }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.orange)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea()
+                )
+                
+                // 纪念日卡片区域
+                VStack(spacing: 20) {
                     // 纪念日卡片（与主页面完全一致）
                     AnniversaryCardView(
                         item: item,
@@ -886,85 +904,79 @@ struct AnniversaryDetailView: View {
                         onTap: { /* 详情页面不提供点击展开功能 */ }
                     )
                     .allowsHitTesting(false) // 禁用交互
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 20)
                 }
-                .frame(height: 200) // 固定顶部区域高度
+                .padding(.top, 16)
+                .padding(.bottom, 24)
                 
-                // 时间线区域 - 占满剩余空间
+                // 时间线区域 - 更优雅的设计
                 VStack(spacing: 0) {
-                    // 时间线标题栏
+                    // 时间线标题栏 - 更简洁的设计
                     HStack {
-                        Text("时光记录")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
-                        Spacer()
-                        Button(action: { showAddThought = true }) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.orange.opacity(0.1))
-                                    .frame(width: 36, height: 36)
-                                Image(systemName: "plus")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.orange)
-                            }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("时光记录")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.primary)
+                            Text("记录你的想法和感受")
+                                .font(.system(size: 15, weight: .regular))
+                                .foregroundColor(.secondary)
                         }
+                        Spacer()
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 20)
-                    .background(
-                        Rectangle()
-                            .fill(Color.white.opacity(0.98))
-                            .shadow(color: Color.orange.opacity(0.05), radius: 2, x: 0, y: 1)
-                    )
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                     
-                    // 时间线内容区域 - 占满剩余空间
+                    // 时间线内容区域
                     ScrollView {
-                        LazyVStack(spacing: 20) {
+                        LazyVStack(spacing: 16) {
                             ForEach(thoughts) { thought in
                                 ThoughtItemView(thought: thought)
+                                    .transition(.asymmetric(
+                                        insertion: .scale(scale: 0.9).combined(with: .opacity),
+                                        removal: .scale(scale: 0.8).combined(with: .opacity)
+                                    ))
                             }
                             
                             if thoughts.isEmpty {
                                 // 空状态 - 更优雅的设计
-                                VStack(spacing: 16) {
+                                VStack(spacing: 20) {
                                     ZStack {
                                         Circle()
-                                            .fill(Color.orange.opacity(0.08))
-                                            .frame(width: 80, height: 80)
+                                            .fill(Color.orange.opacity(0.06))
+                                            .frame(width: 72, height: 72)
                                         Image(systemName: "heart.text.square")
-                                            .font(.system(size: 32))
-                                            .foregroundColor(.orange.opacity(0.7))
+                                            .font(.system(size: 28, weight: .light))
+                                            .foregroundColor(.orange.opacity(0.6))
                                     }
                                     VStack(spacing: 8) {
-                                        Text("还没有记录任何想法")
-                                            .font(.headline)
-                                            .foregroundColor(Color(red: 0.4, green: 0.4, blue: 0.4))
+                                        Text("还没有记录")
+                                            .font(.system(size: 18, weight: .medium))
+                                            .foregroundColor(.primary)
                                         Text("点击右上角的 + 按钮，记录下你的想法吧")
-                                            .font(.subheadline)
-                                            .foregroundColor(.gray.opacity(0.8))
+                                            .font(.system(size: 15, weight: .regular))
+                                            .foregroundColor(.secondary)
                                             .multilineTextAlignment(.center)
                                             .lineLimit(2)
                                     }
                                 }
-                                .padding(.vertical, 80)
+                                .padding(.vertical, 60)
                                 .padding(.horizontal, 40)
                             }
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 20)
-                        .padding(.bottom, 120) // 为悬浮按钮留出空间
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 100) // 为悬浮按钮留出空间
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity) // 占满剩余空间
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(Color.white.opacity(0.98))
-                        .shadow(color: Color.orange.opacity(0.08), radius: 15, x: 0, y: -8)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(.regularMaterial)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: -2)
                 )
             }
             
-            // 悬浮抽签按钮
+            // 悬浮抽签按钮 - 更精致的设计
             HStack {
                 Spacer()
                 VStack {
@@ -972,14 +984,14 @@ struct AnniversaryDetailView: View {
                     FloatingButtonView(
                         buttonGradient: LinearGradient(
                             gradient: Gradient(colors: [
-                                Color(red: 1.0, green: 0.855, blue: 0.725),
-                                Color(red: 1.0, green: 0.898, blue: 0.705)
+                                Color.orange.opacity(0.9),
+                                Color.orange
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        floatingButtonSize: 56,
-                        floatingButtonPadding: 24,
+                        floatingButtonSize: 52,
+                        floatingButtonPadding: 20,
                         isAnimatingButton: isAnimatingButton,
                         onButtonTapped: {
                             if !isAnimatingButton && !showEncourageCard {
@@ -994,8 +1006,8 @@ struct AnniversaryDetailView: View {
                         }
                     )
                 }
-                .padding(.trailing, 24)
-                .padding(.bottom, 34)
+                .padding(.trailing, 20)
+                .padding(.bottom, 30)
             }
             
             // 鼓励语卡片弹窗
@@ -1087,45 +1099,45 @@ struct ThoughtItemView: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            // 时间线圆点和连接线
+            // 时间线圆点和连接线 - 更精致的设计
             VStack(spacing: 0) {
                 ZStack {
                     Circle()
-                        .fill(Color.orange.opacity(0.2))
-                        .frame(width: 20, height: 20)
+                        .fill(Color.orange.opacity(0.15))
+                        .frame(width: 24, height: 24)
                     Circle()
                         .fill(Color.orange)
-                        .frame(width: 12, height: 12)
+                        .frame(width: 10, height: 10)
                 }
                 Rectangle()
-                    .fill(Color.orange.opacity(0.2))
-                    .frame(width: 2)
+                    .fill(Color.orange.opacity(0.12))
+                    .frame(width: 1.5)
                     .frame(maxHeight: .infinity)
             }
             
-            // 内容卡片
+            // 内容卡片 - 更符合iOS设计
             VStack(alignment: .leading, spacing: 12) {
                 Text(thought.content)
                     .font(.system(size: 16, weight: .regular))
-                    .foregroundColor(Color(red: 0.25, green: 0.25, blue: 0.25))
+                    .foregroundColor(.primary)
                     .lineLimit(nil)
                     .multilineTextAlignment(.leading)
                 
-                HStack {
+                HStack(spacing: 6) {
                     Image(systemName: "clock")
-                        .font(.caption2)
-                        .foregroundColor(.gray.opacity(0.7))
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.secondary)
                     Text(DateFormatter.localizedString(from: thought.createdAt, dateStyle: .medium, timeStyle: .short))
-                        .font(.caption)
-                        .foregroundColor(.gray.opacity(0.8))
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.secondary)
                     Spacer()
                 }
             }
-            .padding(20)
+            .padding(18)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color.white)
-                    .shadow(color: Color.orange.opacity(0.08), radius: 8, x: 0, y: 4)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.regularMaterial)
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
             )
             
             Spacer()
@@ -1142,30 +1154,33 @@ struct AddThoughtView: View {
     
     var body: some View {
         ZStack {
-            // 背景
+            // 背景 - 更柔和的配色
             LinearGradient(
                 gradient: Gradient(colors: [
-                    Color(red: 1.0, green: 0.97, blue: 0.88),
-                    Color(red: 1.0, green: 0.93, blue: 0.75),
-                    Color(red: 1.0, green: 0.98, blue: 0.95)
+                    Color(red: 0.98, green: 0.96, blue: 0.92),
+                    Color(red: 0.95, green: 0.92, blue: 0.85),
+                    Color(red: 0.97, green: 0.94, blue: 0.88)
                 ]),
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
             
-            VStack(spacing: 24) {
-                // 标题栏
+            VStack(spacing: 0) {
+                // 导航栏 - 更符合iOS设计
                 HStack {
                     Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(.orange)
+                        HStack(spacing: 8) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .medium))
+                            Text("取消")
+                                .font(.system(size: 17, weight: .regular))
+                        }
+                        .foregroundColor(.primary)
                     }
                     Spacer()
                     Text("记录想法")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.primary)
                     Spacer()
                     Button(action: {
                         if !thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -1173,34 +1188,46 @@ struct AddThoughtView: View {
                         }
                     }) {
                         Text("保存")
-                            .font(.headline)
-                            .foregroundColor(.orange)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : .orange)
                     }
                     .disabled(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-                .padding(.horizontal)
-                .padding(.top, 10)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea()
+                )
                 
                 // 输入区域
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("写下你的想法...")
-                        .font(.headline)
-                        .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
-                        .padding(.horizontal)
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("写下你的想法")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                        Text("记录下此刻的感受和想法")
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
                     
                     TextEditor(text: $thoughtText)
-                        .font(.body)
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundColor(.primary)
                         .padding(16)
                         .background(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(Color.white.opacity(0.95))
-                                .shadow(color: Color.orange.opacity(0.1), radius: 8, x: 0, y: 4)
+                                .fill(.regularMaterial)
+                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
                         )
                         .frame(minHeight: 200)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 20)
+                    
+                    Spacer()
                 }
-                
-                Spacer()
             }
         }
     }
