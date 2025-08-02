@@ -45,11 +45,57 @@ struct HeaderView: View {
             .buttonStyle(PlainButtonStyle())
             .modifier(AppleBreathingButtonModifier())
         }
-        .padding(.horizontal)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
         .frame(height: 56)
         .background(
-            mainGradient
-                .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.10), radius: 8, x: 0, y: 4)
+            ZStack {
+                // 主渐变背景
+                mainGradient
+                
+                // 顶部柔和阴影
+                VStack {
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.15),
+                                    Color.clear
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(height: 8)
+                    Spacer()
+                }
+                
+                // 底部柔和阴影
+                VStack {
+                    Spacer()
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.clear,
+                                    Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.08)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(height: 6)
+                }
+            }
+        )
+        .clipShape(
+            RoundedRectangle(cornerRadius: 0, style: .continuous)
+        )
+        .shadow(
+            color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.12),
+            radius: 12,
+            x: 0,
+            y: 4
         )
     }
 }

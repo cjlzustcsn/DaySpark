@@ -10,6 +10,12 @@ struct AddAnniversaryView: View {
     @State private var selectedColor: Color
     @State private var selectedIcon: String
     
+    // 呼吸动效状态
+    @State private var backgroundBreathingPhase: CGFloat = 0
+    @State private var cardBreathingScale: CGFloat = 1.0
+    @State private var buttonBreathingScale: CGFloat = 1.0
+    @State private var floatingLights: [FloatingLight] = []
+    
     // 初始化状态变量
     init(editingItem: AnniversaryItem? = nil, onDismiss: (() -> Void)? = nil, onSave: ((_ event: String, _ date: Date, _ color: Color, _ icon: String) -> Void)? = nil) {
         self.editingItem = editingItem
@@ -29,6 +35,7 @@ struct AddAnniversaryView: View {
             _selectedIcon = State(initialValue: "🎂")
         }
     }
+    
     // 10个主题色
     let colors: [Color] = [
         .orange, .yellow, .pink, .blue, .green, .purple, .red, .teal, .mint, .indigo
@@ -38,220 +45,304 @@ struct AddAnniversaryView: View {
     
     var body: some View {
         ZStack {
-            // 与主界面一致的温暖渐变背景
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 1.0, green: 0.97, blue: 0.88),
-                    Color(red: 1.0, green: 0.93, blue: 0.75),
-                    Color(red: 1.0, green: 0.98, blue: 0.95)
-                ]),
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            // Apple风格的呼吸背景
+            AppleBreathingBackground()
+            
+            // 浮动光点
+            ForEach(floatingLights) { light in
+                AppleFloatingLight(index: light.index)
+            }
+            
             VStack(spacing: 0) {
-                // 标题栏
-                ZStack {
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color.orange.opacity(0.32), Color.yellow.opacity(0.22)]),
-                        startPoint: .leading, endPoint: .trailing
-                    )
-                    .frame(height: 56)
-                    .ignoresSafeArea(edges: .top)
-                    HStack {
-                        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                // 标题栏 - Apple风格
+                HStack {
+                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                        HStack(spacing: 8) {
                             Image(systemName: "chevron.left")
-                                .font(.title2)
-                                .foregroundColor(.orange)
+                                .font(.system(size: 18, weight: .medium))
+                            Text("取消")
+                                .font(.system(size: 17, weight: .regular))
                         }
-                        Spacer()
-                        Text(editingItem != nil ? "编辑" : "添加")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.orange)
-                        Spacer()
-                        // 小猫点缀
-                        ZStack {
-                            Circle()
-                                .fill(LinearGradient(
-                                    gradient: Gradient(colors: [Color.orange.opacity(0.25), Color.yellow.opacity(0.18)]),
-                                    startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .frame(width: 28, height: 28)
-                            Text("🐱")
-                                .font(.system(size: 18))
-                        }
-                        .padding(.trailing, 2)
+                        .foregroundColor(.primary)
                     }
-                    .padding(.horizontal)
-                }
-                .frame(height: 56)
-                .overlay(
-                    Divider()
-                        .background(Color(.systemGray5)), alignment: .bottom
-                )
-                // 表单区域
-                VStack(spacing: 22) {
-                    // 事件
-                    AddCard {
-                        HStack(spacing: 0) {
-                            Text("事件")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .frame(width: 56, alignment: .leading)
-                            Divider()
-                                .frame(width: 1, height: 24)
-                                .background(Color.orange.opacity(0.18))
-                                .padding(.horizontal, 6)
-                            Spacer(minLength: 0)
-                            TextField("请输入事件", text: $event)
-                                .multilineTextAlignment(.trailing)
-                                .font(.body)
-                                .frame(width: 160)
-                        }
-                    }
-                    .frame(height: 48)
-                    // 日期
-                    AddCard {
-                        HStack(spacing: 0) {
-                            Text("日期")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .frame(width: 56, alignment: .leading)
-                            Divider()
-                                .frame(width: 1, height: 24)
-                                .background(Color.orange.opacity(0.18))
-                                .padding(.horizontal, 6)
-                            Spacer(minLength: 0)
-                            DatePicker("", selection: $date, displayedComponents: .date)
-                                .labelsHidden()
-                                .frame(width: 160)
-                        }
-                    }
-                    .frame(height: 48)
-                    // 主题色
-                    AddCard {
-                        HStack(alignment: .center, spacing: 0) {
-                            Text("主题色")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .frame(width: 56, alignment: .leading)
-                            // 竖线分隔
-                            Divider()
-                                .frame(width: 1, height: 32)
-                                .background(Color.orange.opacity(0.18))
-                                .padding(.horizontal, 6)
-                            Spacer(minLength: 0)
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 14) {
-                                    ForEach(colors, id: \.self) { color in
-                                        Circle()
-                                            .fill(color)
-                                            .frame(width: 28, height: 28)
-                                            .overlay(
-                                                Circle().stroke(Color.orange, lineWidth: selectedColor == color ? 2.5 : 0)
-                                            )
-                                            .scaleEffect(selectedColor == color ? 1.18 : 1.0)
-                                            .shadow(color: selectedColor == color ? color.opacity(0.18) : .clear, radius: 4, x: 0, y: 2)
-                                            .padding(.vertical, 8)
-                                            .onTapGesture { selectedColor = color }
-                                    }
-                                }
-                                .padding(.vertical, 2)
-                                .padding(.leading, 10) // 增加左侧内边距，防止放大被截断
-                                .padding(.trailing, 2)
-                            }
-                        }
-                    }
-                    .frame(height: 80)
-                    // 图标
-                    AddCard {
-                        HStack(alignment: .center, spacing: 0) {
-                            Text("图标")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .frame(width: 56, alignment: .leading) // 固定宽度，与主题色对齐
-                            // 竖线分隔
-                            Divider()
-                                .frame(width: 1, height: 32)
-                                .background(Color.orange.opacity(0.18))
-                                .padding(.horizontal, 6)
-                            Spacer(minLength: 0)
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 14) {
-                                    ForEach(icons, id: \.self) { icon in
-                                        Text(icon)
-                                            .font(.system(size: 22))
-                                            .padding(6)
-                                            .background(
-                                                Circle()
-                                                    .fill(selectedIcon == icon ? Color.orange.opacity(0.18) : Color.clear)
-                                            )
-                                            .scaleEffect(selectedIcon == icon ? 1.18 : 1.0)
-                                            .shadow(color: selectedIcon == icon ? Color.orange.opacity(0.18) : .clear, radius: 4, x: 0, y: 2)
-                                            .padding(.vertical, 8)
-                                            .onTapGesture { selectedIcon = icon }
-                                    }
-                                }
-                                .padding(.vertical, 2)
-                                .padding(.leading, 10) // 增加左侧内边距，保证左对齐
-                                .padding(.trailing, 2)
-                            }
-                        }
-                    }
-                    .frame(height: 80)
-                }
-                .padding(.top, 36)
-                .padding(.horizontal, 24)
-                // 保存按钮
-                Spacer()
-                VStack(spacing: 10) {
+                    Spacer()
+                    Text(editingItem != nil ? "编辑纪念日" : "添加纪念日")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.primary)
+                    Spacer()
                     Button(action: {
-                        if let onSave = onSave {
-                            onSave(event, date, selectedColor, selectedIcon)
-                        }
-                        if let onDismiss = onDismiss {
-                            onDismiss()
-                        } else {
-                            presentationMode.wrappedValue.dismiss()
+                        if !event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            if let onSave = onSave {
+                                onSave(event, date, selectedColor, selectedIcon)
+                            }
+                            if let onDismiss = onDismiss {
+                                onDismiss()
+                            } else {
+                                presentationMode.wrappedValue.dismiss()
+                            }
                         }
                     }) {
                         Text("保存")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color.orange, Color.yellow]),
-                                    startPoint: .leading, endPoint: .trailing
-                                )
-                            )
-                            .cornerRadius(24)
-                            .shadow(color: .orange.opacity(0.12), radius: 6, x: 0, y: 2)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : .orange)
                     }
-                    .padding(.horizontal, 48)
-                    Text("每一天都值得被记录")
-                        .font(.footnote)
-                        .foregroundColor(.orange)
-                        .padding(.bottom, 8)
+                    .disabled(event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-                .padding(.bottom, 24)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea()
+                )
+                
+                // 表单区域
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // 事件输入卡片
+                        AppleBreathingCard {
+                            HStack(spacing: 16) {
+                                Image(systemName: "textformat")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(.orange)
+                                    .frame(width: 24)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("事件名称")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                    TextField("请输入事件名称", text: $event)
+                                        .font(.system(size: 17, weight: .regular))
+                                        .foregroundColor(.primary)
+                                }
+                                Spacer()
+                            }
+                            .padding(20)
+                        }
+                        
+                        // 日期选择卡片
+                        AppleBreathingCard {
+                            HStack(spacing: 16) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(.orange)
+                                    .frame(width: 24)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("纪念日期")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                    DatePicker("", selection: $date, displayedComponents: .date)
+                                        .labelsHidden()
+                                        .font(.system(size: 17, weight: .regular))
+                                }
+                                Spacer()
+                            }
+                            .padding(20)
+                        }
+                        
+                        // 主题色选择卡片
+                        AppleBreathingCard {
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack(spacing: 16) {
+                                    Image(systemName: "paintpalette")
+                                        .font(.system(size: 20, weight: .medium))
+                                        .foregroundColor(.orange)
+                                        .frame(width: 24)
+                                    
+                                    Text("主题色彩")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                }
+                                
+                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+                                    ForEach(colors, id: \.self) { color in
+                                        Circle()
+                                            .fill(color)
+                                            .frame(width: 44, height: 44)
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(Color.white, lineWidth: 3)
+                                                    .opacity(selectedColor == color ? 1 : 0)
+                                            )
+                                            .scaleEffect(selectedColor == color ? 1.1 : 1.0)
+                                            .shadow(color: selectedColor == color ? color.opacity(0.3) : Color.clear, radius: 6, x: 0, y: 3)
+                                            .onTapGesture {
+                                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                                    selectedColor = color
+                                                }
+                                            }
+                                    }
+                                }
+                            }
+                            .padding(20)
+                        }
+                        
+                        // 图标选择卡片
+                        AppleBreathingCard {
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack(spacing: 16) {
+                                    Image(systemName: "face.smiling")
+                                        .font(.system(size: 20, weight: .medium))
+                                        .foregroundColor(.orange)
+                                        .frame(width: 24)
+                                    
+                                    Text("选择图标")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                }
+                                
+                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+                                    ForEach(icons, id: \.self) { icon in
+                                        Text(icon)
+                                            .font(.system(size: 24))
+                                            .frame(width: 44, height: 44)
+                                            .background(
+                                                Circle()
+                                                    .fill(selectedIcon == icon ? Color.orange.opacity(0.15) : Color.clear)
+                                            )
+                                            .scaleEffect(selectedIcon == icon ? 1.1 : 1.0)
+                                            .shadow(color: selectedIcon == icon ? Color.orange.opacity(0.2) : Color.clear, radius: 4, x: 0, y: 2)
+                                            .onTapGesture {
+                                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                                    selectedIcon = icon
+                                                }
+                                            }
+                                    }
+                                }
+                            }
+                            .padding(20)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
+                    .padding(.bottom, 120)
+                }
+                
+                // 保存按钮 - 悬浮在底部
+                VStack(spacing: 8) {
+                    Button(action: {
+                        if !event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            if let onSave = onSave {
+                                onSave(event, date, selectedColor, selectedIcon)
+                            }
+                            if let onDismiss = onDismiss {
+                                onDismiss()
+                            } else {
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                        }
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("保存纪念日")
+                                .font(.system(size: 17, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.orange,
+                                    event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray.opacity(0.8) : Color.orange.opacity(0.8)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(25)
+                        .shadow(color: event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.orange.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
+                    .disabled(event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .scaleEffect(buttonBreathingScale)
+                    
+                    Text("每一天都值得被记录 ✨")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 34)
+                .background(
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea()
+                )
             }
+        }
+        .onAppear {
+            startBreathingAnimations()
+            generateFloatingLights()
+        }
+    }
+    
+    private func startBreathingAnimations() {
+        // 卡片呼吸动效
+        withAnimation(
+            Animation.easeInOut(duration: 4.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            cardBreathingScale = 1.02
+        }
+        
+        // 按钮呼吸动效
+        withAnimation(
+            Animation.easeInOut(duration: 3.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            buttonBreathingScale = 1.03
+        }
+    }
+    
+    private func generateFloatingLights() {
+        floatingLights = (0..<3).map { FloatingLight(index: $0) }
+    }
+}
+
+// 浮动光点数据模型
+struct FloatingLight: Identifiable {
+    let id = UUID()
+    let index: Int
+}
+
+// Apple风格呼吸卡片
+struct AppleBreathingCard<Content: View>: View {
+    let content: () -> Content
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    @State private var shadowRadius: CGFloat = 8
+    
+    var body: some View {
+        content()
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(.regularMaterial)
+                    .shadow(
+                        color: Color.black.opacity(0.08),
+                        radius: shadowRadius,
+                        x: 0,
+                        y: 4
+                    )
+            )
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
+            .onAppear {
+                startAppleBreathing()
+            }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 5.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.01
+            breathingOpacity = 0.98
+            shadowRadius = 10
         }
     }
 }
 
-// 温馨圆角卡片
-struct AddCard<Content: View>: View {
-    let content: () -> Content
-    var body: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .fill(Color.white.opacity(0.98))
-            .shadow(color: Color.orange.opacity(0.07), radius: 6, x: 0, y: 2)
-            .overlay(
-                content()
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-            )
-    }
-}
