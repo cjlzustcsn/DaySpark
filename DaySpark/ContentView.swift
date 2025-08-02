@@ -1424,329 +1424,152 @@ struct AppleBreathingAnniversaryCard: View {
     }
 }
 
-#Preview {
-    ContentView()
-}
-// 纪念日详情页面
-struct AnniversaryDetailView: View {
-    let item: AnniversaryItem
+// MARK: - Apple风格呼吸详情页标题栏
+struct AppleBreathingDetailHeaderView: View {
     let onDismiss: () -> Void
-    @State private var thoughts: [ThoughtItem] = []
-    @State private var newThought: String = ""
-    @State private var showAddThought = false
-    @State private var showEditThought = false
-    @State private var editingThought: ThoughtItem?
-    
-    // 抽签相关状态
-    @State private var showEncourageCard = false
-    @State private var encourageText = ""
-    @State private var isAnimatingButton = false
-    @State private var cardAnim = false
-    @State private var cardGlow = false
-    @State private var cardContentAppear = false
-    @State private var buttonOpacity: Double = 1
-    
-    // 鼓励语
-    let encourages = [
-        "你很棒！",
-        "再坚持一下，明天会更好！",
-        "相信自己，你值得被爱。",
-        "每一天都值得期待。",
-        "你的努力终将被看到。",
-        "温柔以待自己。",
-        "别怕，阳光总在风雨后。"
-    ]
+    let onAddThought: () -> Void
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
     
     var body: some View {
-        ZStack {
-            // 背景渐变 - 更柔和的配色
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.98, green: 0.96, blue: 0.92),
-                    Color(red: 0.95, green: 0.92, blue: 0.85),
-                    Color(red: 0.97, green: 0.94, blue: 0.88)
-                ]),
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+        HStack {
+            Button(action: onDismiss) {
+                HStack(spacing: 8) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .medium))
+                    Text("返回")
+                        .font(.system(size: 17, weight: .regular))
+                }
+                .foregroundColor(.primary)
+            }
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
             
-            VStack(spacing: 0) {
-                // 顶部导航栏 - 更符合iOS设计
-                HStack {
-                    Button(action: { 
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                            onDismiss()
-                        }
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 18, weight: .medium))
-                            Text("返回")
-                                .font(.system(size: 17, weight: .regular))
-                        }
-                        .foregroundColor(.primary)
-                    }
-                    Spacer()
-                    Text("详情")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Button(action: { showAddThought = true }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.orange)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .ignoresSafeArea()
-                )
-                
-                // 纪念日卡片区域
-                VStack(spacing: 20) {
-                    // 详情页静态卡片（不包含呼吸动效）
-                    DetailPageCardView(item: item)
-                        .padding(.horizontal, 20)
-                }
-                .padding(.top, 16)
-                .padding(.bottom, 24)
-                
-                // 时间线区域 - 更优雅的设计
-                VStack(spacing: 0) {
-                    // 时间线标题栏 - 更简洁的设计
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("时光记录")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.primary)
-                            Text("记录你的想法和感受")
-                                .font(.system(size: 15, weight: .regular))
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
-                    
-                    // 时间线内容区域
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            ForEach(thoughts) { thought in
-                                ThoughtItemView(
-                                    thought: thought,
-                                    onEdit: { editingThought in
-                                        self.editingThought = editingThought
-                                        showEditThought = true
-                                    },
-                                    onDelete: { deletingThought in
-                                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                            thoughts.removeAll { $0.id == deletingThought.id }
-                                        }
-                                    }
-                                )
-                                .transition(.asymmetric(
-                                    insertion: .scale(scale: 0.9).combined(with: .opacity),
-                                    removal: .scale(scale: 0.8).combined(with: .opacity)
-                                ))
-                            }
-                            
-                            if thoughts.isEmpty {
-                                // 空状态 - 更优雅的设计
-                                VStack(spacing: 20) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Color.orange.opacity(0.06))
-                                            .frame(width: 72, height: 72)
-                                        Image(systemName: "heart.text.square")
-                                            .font(.system(size: 28, weight: .light))
-                                            .foregroundColor(.orange.opacity(0.6))
-                                    }
-                                    VStack(spacing: 8) {
-                                        Text("还没有记录")
-                                            .font(.system(size: 18, weight: .medium))
-                                            .foregroundColor(.primary)
-                                        Text("点击右上角的 + 按钮，记录下你的想法吧")
-                                            .font(.system(size: 15, weight: .regular))
-                                            .foregroundColor(.secondary)
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(2)
-                                    }
-                                }
-                                .padding(.vertical, 60)
-                                .padding(.horizontal, 40)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                        .padding(.bottom, 100) // 为悬浮按钮留出空间
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+            Spacer()
+            Text("详情")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.primary)
+            Spacer()
+            
+            Button(action: onAddThought) {
+                ZStack {
+                    Circle()
                         .fill(.regularMaterial)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: -2)
-                )
-            }
-            
-            // 悬浮抽签按钮 - 更精致的设计
-            HStack {
-                Spacer()
-                VStack {
-                    Spacer()
-                    FloatingButtonView(
-                        buttonGradient: LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.orange.opacity(0.9),
-                                Color.orange
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        floatingButtonSize: 52,
-                        floatingButtonPadding: 20,
-                        isAnimatingButton: isAnimatingButton,
-                        onButtonTapped: {
-                            if !isAnimatingButton && !showEncourageCard {
-                                isAnimatingButton = true
-                                // 动效后弹出卡片
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                    encourageText = encourages.randomElement() ?? "你很棒！"
-                                    showEncourageCard = true
-                                    isAnimatingButton = false
-                                }
-                            }
-                        }
-                    )
-                }
-                .padding(.trailing, 20)
-                .padding(.bottom, 30)
-            }
-            
-            // 鼓励语卡片弹窗
-            if showEncourageCard {
-                EncourageCardView(
-                    encourageText: encourageText,
-                    cardAnim: cardAnim,
-                    cardGlow: cardGlow,
-                    cardContentAppear: cardContentAppear,
-                    buttonOpacity: buttonOpacity,
-                    onDismiss: {
-                        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
-                            cardAnim = false
-                            cardGlow = false
-                            cardContentAppear = false
-                            buttonOpacity = 0
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            showEncourageCard = false
-                        }
-                    },
-                    onSave: {
-                        // 保存抽签结果到时间线
-                        let newThought = ThoughtItem(
-                            id: UUID(),
-                            content: "✨ 今日抽签：\(encourageText)",
-                            createdAt: Date()
-                        )
-                        thoughts.insert(newThought, at: 0) // 最新的在前面
-                        
-                        // 关闭卡片
-                        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
-                            cardAnim = false
-                            cardGlow = false
-                            cardContentAppear = false
-                            buttonOpacity = 0
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            showEncourageCard = false
-                        }
-                    }
-                )
-                .onAppear {
-                    cardAnim = false
-                    cardGlow = false
-                    cardContentAppear = false
-                    buttonOpacity = 1
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        withAnimation(.interpolatingSpring(stiffness: 180, damping: 16)) {
-                            cardAnim = true
-                        }
-                        withAnimation(.easeOut(duration: 0.7)) {
-                            cardGlow = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-                            cardContentAppear = true
-                        }
-                    }
+                        .frame(width: 36, height: 36)
+                        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 3)
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.orange)
                 }
             }
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
         }
-        .sheet(isPresented: $showAddThought) {
-            AddThoughtView(
-                onDismiss: { showAddThought = false },
-                onSave: { thoughtText in
-                    let newThought = ThoughtItem(
-                        id: UUID(),
-                        content: thoughtText,
-                        createdAt: Date()
-                    )
-                    thoughts.insert(newThought, at: 0) // 最新的在前面
-                    showAddThought = false
-                }
-            )
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+        )
+        .onAppear {
+            startAppleBreathing()
         }
-        .sheet(isPresented: Binding(
-            get: { showEditThought && editingThought != nil },
-            set: { showEditThought = $0 }
-        )) {
-            if let editingThought = editingThought {
-                EditThoughtView(
-                    thought: editingThought,
-                    onDismiss: {
-                        showEditThought = false
-                        self.editingThought = nil
-                    },
-                    onSave: { updatedContent in
-                        if let index = thoughts.firstIndex(where: { $0.id == editingThought.id }) {
-                            let updatedThought = ThoughtItem(
-                                id: editingThought.id,
-                                content: updatedContent,
-                                createdAt: editingThought.createdAt
-                            )
-                            thoughts[index] = updatedThought
-                        }
-                        showEditThought = false
-                        self.editingThought = nil
-                    }
-                )
-            }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 3.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.05
+            breathingOpacity = 0.9
         }
     }
 }
 
-// 想法数据模型
-struct ThoughtItem: Identifiable {
-    let id: UUID
-    let content: String
-    let createdAt: Date
+// MARK: - Apple风格呼吸时间线视图
+struct AppleBreathingTimelineView: View {
+    let thoughts: [ThoughtItem]
+    let onEdit: (ThoughtItem) -> Void
+    let onDelete: (ThoughtItem) -> Void
+    
+    @State private var contentBreathingPhase: CGFloat = 0
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // 时间线标题栏
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("时光记录")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text("记录你的想法和感受")
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            
+            // 时间线内容区域
+            ScrollView {
+                LazyVStack(spacing: 16) {
+                    ForEach(thoughts) { thought in
+                        AppleBreathingThoughtItemView(
+                            thought: thought,
+                            onEdit: onEdit,
+                            onDelete: onDelete
+                        )
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.9).combined(with: .opacity),
+                            removal: .scale(scale: 0.8).combined(with: .opacity)
+                        ))
+                    }
+                    
+                    if thoughts.isEmpty {
+                        AppleBreathingEmptyStateView()
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 100)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.regularMaterial)
+                .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: -8)
+        )
+        .onAppear {
+            startContentBreathing()
+        }
+    }
+    
+    private func startContentBreathing() {
+        withAnimation(.easeInOut(duration: 6.0).repeatForever(autoreverses: true)) {
+            contentBreathingPhase = 1.0
+        }
+    }
 }
 
-// 想法项视图
-struct ThoughtItemView: View {
+// MARK: - Apple风格呼吸想法项视图
+struct AppleBreathingThoughtItemView: View {
     let thought: ThoughtItem
     let onEdit: (ThoughtItem) -> Void
     let onDelete: (ThoughtItem) -> Void
     
     @State private var showActionSheet = false
     @State private var showDeleteAlert = false
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    @State private var shadowRadius: CGFloat = 8
     
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            // 时间线圆点和连接线 - 更精致的设计
+            // 时间线圆点和连接线
             VStack(spacing: 0) {
                 ZStack {
                     Circle()
@@ -1765,7 +1588,7 @@ struct ThoughtItemView: View {
                     .frame(maxHeight: .infinity)
             }
             
-            // 内容卡片 - 更符合iOS设计
+            // 内容卡片
             VStack(alignment: .leading, spacing: 14) {
                 Text(thought.content)
                     .font(.system(size: 16, weight: .regular))
@@ -1783,7 +1606,6 @@ struct ThoughtItemView: View {
                         .foregroundColor(.secondary)
                     Spacer()
                     
-                    // 操作按钮 - 更优雅的设计
                     Button(action: { showActionSheet = true }) {
                         Image(systemName: "ellipsis.circle")
                             .font(.system(size: 18, weight: .regular))
@@ -1803,10 +1625,15 @@ struct ThoughtItemView: View {
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(.regularMaterial)
-                    .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
+                    .shadow(color: Color.black.opacity(0.06), radius: shadowRadius, x: 0, y: 3)
             )
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
             
             Spacer()
+        }
+        .onAppear {
+            startAppleBreathing()
         }
         .confirmationDialog("选择操作", isPresented: $showActionSheet, titleVisibility: .hidden) {
             Button(action: { onEdit(thought) }) {
@@ -1833,126 +1660,235 @@ struct ThoughtItemView: View {
             Text("确定要删除这条记录吗？此操作无法撤销。")
         }
     }
-}
-
-// 编辑想法页面
-struct EditThoughtView: View {
-    let thought: ThoughtItem
-    let onDismiss: () -> Void
-    let onSave: (String) -> Void
-    @State private var thoughtText: String
-    @Environment(\.presentationMode) var presentationMode
     
-    init(thought: ThoughtItem, onDismiss: @escaping () -> Void, onSave: @escaping (String) -> Void) {
-        self.thought = thought
-        self.onDismiss = onDismiss
-        self.onSave = onSave
-        self._thoughtText = State(initialValue: thought.content)
-    }
-    
-    var body: some View {
-        ZStack {
-            // 背景 - 更柔和的配色
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.98, green: 0.96, blue: 0.92),
-                    Color(red: 0.95, green: 0.92, blue: 0.85),
-                    Color(red: 0.97, green: 0.94, blue: 0.88)
-                ]),
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // 导航栏 - 更符合iOS设计
-                HStack {
-                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 18, weight: .medium))
-                            Text("取消")
-                                .font(.system(size: 17, weight: .regular))
-                        }
-                        .foregroundColor(.primary)
-                    }
-                    Spacer()
-                    Text("编辑想法")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Button(action: {
-                        if !thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            onSave(thoughtText)
-                        }
-                    }) {
-                        Text("保存")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : .orange)
-                    }
-                    .disabled(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .ignoresSafeArea()
-                )
-                
-                // 输入区域
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("编辑你的想法")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.primary)
-                        Text("修改下此刻的感受和想法")
-                            .font(.system(size: 15, weight: .regular))
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
-                    TextEditor(text: $thoughtText)
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundColor(.primary)
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(.regularMaterial)
-                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
-                        )
-                        .frame(minHeight: 200)
-                        .padding(.horizontal, 20)
-                    
-                    Spacer()
-                }
-            }
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 5.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.02
+            breathingOpacity = 0.98
+            shadowRadius = 12
         }
     }
 }
 
-// 添加想法页面
-struct AddThoughtView: View {
+// MARK: - Apple风格呼吸空状态视图
+struct AppleBreathingEmptyStateView: View {
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.06))
+                    .frame(width: 72, height: 72)
+                Image(systemName: "heart.text.square")
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundColor(.orange.opacity(0.6))
+            }
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
+            
+            VStack(spacing: 8) {
+                Text("还没有记录")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primary)
+                Text("点击右上角的 + 按钮，记录下你的想法吧")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.vertical, 60)
+        .padding(.horizontal, 40)
+        .onAppear {
+            startAppleBreathing()
+        }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 4.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.05
+            breathingOpacity = 0.9
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸悬浮按钮
+struct AppleBreathingFloatingButton: View {
+    let isAnimatingButton: Bool
+    let onButtonTapped: () -> Void
+    
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    
+    var body: some View {
+        HStack {
+            Spacer()
+            VStack {
+                Spacer()
+                Button(action: onButtonTapped) {
+                    ZStack {
+                        Circle()
+                            .fill(.regularMaterial)
+                            .frame(width: 52, height: 52)
+                            .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 6)
+                        Image(systemName: "wand.and.stars")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundColor(.orange)
+                    }
+                    .scaleEffect(isAnimatingButton ? 1.25 : breathingScale)
+                    .rotationEffect(.degrees(isAnimatingButton ? 20 : 0))
+                    .opacity(isAnimatingButton ? 0.7 : breathingOpacity)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.45), value: isAnimatingButton)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.trailing, 20)
+                .padding(.bottom, 30)
+                .accessibilityLabel("抽签")
+            }
+        }
+        .onAppear {
+            startAppleBreathing()
+        }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 3.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.08
+            breathingOpacity = 0.9
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸鼓励卡片
+struct AppleBreathingEncourageCard: View {
+    let encourageText: String
+    let onDismiss: () -> Void
+    let onSave: () -> Void
+    
+    @State private var cardScale: CGFloat = 0.8
+    @State private var cardOpacity: Double = 0
+    @State private var contentOpacity: Double = 0
+    @State private var buttonScale: CGFloat = 1.0
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    dismissCard()
+                }
+            
+            VStack(spacing: 24) {
+                Text("✨ 今日抽签 ✨")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.primary)
+                
+                Text(encourageText)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                
+                HStack(spacing: 16) {
+                    Button(action: dismissCard) {
+                        Text("关闭")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.regularMaterial)
+                            )
+                    }
+                    
+                    Button(action: {
+                        onSave()
+                        dismissCard()
+                    }) {
+                        Text("保存")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.orange)
+                            )
+                    }
+                    .scaleEffect(buttonScale)
+                }
+            }
+            .padding(32)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.regularMaterial)
+                    .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 10)
+            )
+            .scaleEffect(cardScale)
+            .opacity(cardOpacity)
+        }
+        .onAppear {
+            showCard()
+        }
+    }
+    
+    private func showCard() {
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            cardScale = 1.0
+            cardOpacity = 1.0
+        }
+        
+        withAnimation(.easeInOut(duration: 0.8).delay(0.2)) {
+            contentOpacity = 1.0
+        }
+        
+        withAnimation(
+            Animation.easeInOut(duration: 2.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            buttonScale = 1.05
+        }
+    }
+    
+    private func dismissCard() {
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            cardScale = 0.8
+            cardOpacity = 0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            onDismiss()
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸添加想法视图
+struct AppleBreathingAddThoughtView: View {
     let onDismiss: () -> Void
     let onSave: (String) -> Void
     @State private var thoughtText: String = ""
     @Environment(\.presentationMode) var presentationMode
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
     
     var body: some View {
         ZStack {
-            // 背景 - 更柔和的配色
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.98, green: 0.96, blue: 0.92),
-                    Color(red: 0.95, green: 0.92, blue: 0.85),
-                    Color(red: 0.97, green: 0.94, blue: 0.88)
-                ]),
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            AppleBreathingBackground()
             
             VStack(spacing: 0) {
-                // 导航栏 - 更符合iOS设计
+                // 导航栏
                 HStack {
                     Button(action: { presentationMode.wrappedValue.dismiss() }) {
                         HStack(spacing: 8) {
@@ -1980,7 +1916,7 @@ struct AddThoughtView: View {
                     .disabled(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+                .padding(.vertical, 16)
                 .background(
                     Rectangle()
                         .fill(.ultraThinMaterial)
@@ -2000,22 +1936,409 @@ struct AddThoughtView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     
-                    TextEditor(text: $thoughtText)
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundColor(.primary)
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(.regularMaterial)
-                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
-                        )
-                        .frame(minHeight: 200)
-                        .padding(.horizontal, 20)
+                    AppleBreathingCard {
+                        TextEditor(text: $thoughtText)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(.primary)
+                            .padding(16)
+                            .frame(minHeight: 200)
+                    }
+                    .padding(.horizontal, 20)
                     
                     Spacer()
                 }
             }
         }
+        .onAppear {
+            startAppleBreathing()
+        }
     }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 4.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.01
+            breathingOpacity = 0.98
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸编辑想法视图
+struct AppleBreathingEditThoughtView: View {
+    let thought: ThoughtItem
+    let onDismiss: () -> Void
+    let onSave: (String) -> Void
+    @State private var thoughtText: String
+    @Environment(\.presentationMode) var presentationMode
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    
+    init(thought: ThoughtItem, onDismiss: @escaping () -> Void, onSave: @escaping (String) -> Void) {
+        self.thought = thought
+        self.onDismiss = onDismiss
+        self.onSave = onSave
+        self._thoughtText = State(initialValue: thought.content)
+    }
+    
+    var body: some View {
+        ZStack {
+            AppleBreathingBackground()
+            
+            VStack(spacing: 0) {
+                // 导航栏
+                HStack {
+                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .medium))
+                            Text("取消")
+                                .font(.system(size: 17, weight: .regular))
+                        }
+                        .foregroundColor(.primary)
+                    }
+                    Spacer()
+                    Text("编辑想法")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Button(action: {
+                        if !thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            onSave(thoughtText)
+                        }
+                    }) {
+                        Text("保存")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : .orange)
+                    }
+                    .disabled(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea()
+                )
+                
+                // 输入区域
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("编辑你的想法")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                        Text("修改下此刻的感受和想法")
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    
+                    AppleBreathingCard {
+                        TextEditor(text: $thoughtText)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(.primary)
+                            .padding(16)
+                            .frame(minHeight: 200)
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    Spacer()
+                }
+            }
+        }
+        .onAppear {
+            startAppleBreathing()
+        }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 4.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.01
+            breathingOpacity = 0.98
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸详情页卡片
+struct AppleBreathingDetailCardView: View {
+    let item: AnniversaryItem
+    
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    @State private var shadowRadius: CGFloat = 12
+    
+    // 计算进度条进度
+    private func calculateProgress(for targetDate: Date) -> Double {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        if targetDate <= now {
+            return 1.0
+        }
+        
+        let totalDays = calendar.dateComponents([.day], from: item.createdAt, to: targetDate).day ?? 1
+        let elapsedDays = calendar.dateComponents([.day], from: item.createdAt, to: now).day ?? 0
+        let progress = Double(elapsedDays) / Double(totalDays)
+        
+        return max(0.0, min(1.0, progress))
+    }
+    
+    var body: some View {
+        AppleBreathingCard {
+            VStack(alignment: .leading, spacing: 16) {
+                // 顶部信息
+                HStack {
+                    Text(item.icon)
+                        .font(.system(size: 32))
+                        .modifier(AppleBreathingIconModifier())
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.event)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.primary)
+                        Text(DateFormatter.localizedString(from: item.date, dateStyle: .medium, timeStyle: .none))
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    
+                    if item.isPinned {
+                        Image(systemName: "pin.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.blue)
+                    }
+                }
+                
+                // 进度条
+                VStack(alignment: .leading, spacing: 8) {
+                    let progress = calculateProgress(for: item.date)
+                    let daysLeft = Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0
+                    let isFuture = item.date > Date()
+                    
+                    ProgressView(value: progress)
+                        .accentColor(isFuture ? Color.orange : Color.green)
+                        .scaleEffect(x: 1, y: 1.5, anchor: .center)
+                        .modifier(AppleBreathingProgressModifier(color: isFuture ? Color.orange : Color.green))
+                    
+                    HStack {
+                        Text(isFuture ? "还有" : "已陪伴")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("\(abs(daysLeft))天")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(isFuture ? Color.orange : Color.green)
+                    }
+                }
+            }
+            .padding(20)
+        }
+        .scaleEffect(breathingScale)
+        .opacity(breathingOpacity)
+        .shadow(
+            color: item.isPinned ? Color.blue.opacity(0.15) : item.color.opacity(0.1),
+            radius: shadowRadius,
+            x: 0,
+            y: 6
+        )
+        .onAppear {
+            startAppleBreathing()
+        }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 5.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.02
+            breathingOpacity = 0.98
+            shadowRadius = 16
+        }
+    }
+}
+
+#Preview {
+    ContentView()
+}
+// MARK: - Apple风格呼吸详情页面
+struct AnniversaryDetailView: View {
+    let item: AnniversaryItem
+    let onDismiss: () -> Void
+    @State private var thoughts: [ThoughtItem] = []
+    @State private var showAddThought = false
+    @State private var showEditThought = false
+    @State private var editingThought: ThoughtItem?
+    
+    // 抽签相关状态
+    @State private var showEncourageCard = false
+    @State private var encourageText = ""
+    @State private var isAnimatingButton = false
+    
+    // 呼吸动效状态
+    @State private var headerBreathingScale: CGFloat = 1.0
+    @State private var contentBreathingPhase: CGFloat = 0
+    @State private var floatingLights: [FloatingLight] = []
+    
+    // 鼓励语
+    let encourages = [
+        "你很棒！",
+        "再坚持一下，明天会更好！",
+        "相信自己，你值得被爱。",
+        "每一天都值得期待。",
+        "你的努力终将被看到。",
+        "温柔以待自己。",
+        "别怕，阳光总在风雨后。"
+    ]
+    
+    var body: some View {
+        ZStack {
+            // Apple风格呼吸背景
+            AppleBreathingBackground()
+            
+            // 浮动光点
+            ForEach(floatingLights) { light in
+                AppleFloatingLight(index: light.index)
+            }
+            
+            VStack(spacing: 0) {
+                // 顶部导航栏 - Apple风格
+                AppleBreathingDetailHeaderView(
+                    onDismiss: {
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            onDismiss()
+                        }
+                    },
+                    onAddThought: { showAddThought = true }
+                )
+                .scaleEffect(headerBreathingScale)
+                
+                // 纪念日卡片区域
+                VStack(spacing: 20) {
+                    AppleBreathingDetailCardView(item: item)
+                        .padding(.horizontal, 20)
+                }
+                .padding(.top, 16)
+                .padding(.bottom, 24)
+                
+                // 时间线区域 - Apple风格
+                AppleBreathingTimelineView(
+                    thoughts: thoughts,
+                    onEdit: { editingThought in
+                        self.editingThought = editingThought
+                        showEditThought = true
+                    },
+                    onDelete: { deletingThought in
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            thoughts.removeAll { $0.id == deletingThought.id }
+                        }
+                    }
+                )
+            }
+            
+            // 悬浮抽签按钮 - Apple风格
+            AppleBreathingFloatingButton(
+                isAnimatingButton: isAnimatingButton,
+                onButtonTapped: {
+                    if !isAnimatingButton && !showEncourageCard {
+                        isAnimatingButton = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            encourageText = encourages.randomElement() ?? "你很棒！"
+                            showEncourageCard = true
+                            isAnimatingButton = false
+                        }
+                    }
+                }
+            )
+            
+            // 鼓励语卡片弹窗 - Apple风格
+            if showEncourageCard {
+                AppleBreathingEncourageCard(
+                    encourageText: encourageText,
+                    onDismiss: {
+                        showEncourageCard = false
+                    },
+                    onSave: {
+                        let newThought = ThoughtItem(
+                            id: UUID(),
+                            content: "✨ 今日抽签：\(encourageText)",
+                            createdAt: Date()
+                        )
+                        thoughts.insert(newThought, at: 0)
+                        showEncourageCard = false
+                    }
+                )
+            }
+        }
+        .onAppear {
+            startBreathingAnimations()
+            generateFloatingLights()
+        }
+        .sheet(isPresented: $showAddThought) {
+            AppleBreathingAddThoughtView(
+                onDismiss: { showAddThought = false },
+                onSave: { thoughtText in
+                    let newThought = ThoughtItem(
+                        id: UUID(),
+                        content: thoughtText,
+                        createdAt: Date()
+                    )
+                    thoughts.insert(newThought, at: 0)
+                    showAddThought = false
+                }
+            )
+        }
+        .sheet(isPresented: Binding(
+            get: { showEditThought && editingThought != nil },
+            set: { showEditThought = $0 }
+        )) {
+            if let editingThought = editingThought {
+                AppleBreathingEditThoughtView(
+                    thought: editingThought,
+                    onDismiss: {
+                        showEditThought = false
+                        self.editingThought = nil
+                    },
+                    onSave: { updatedContent in
+                        if let index = thoughts.firstIndex(where: { $0.id == editingThought.id }) {
+                            let updatedThought = ThoughtItem(
+                                id: editingThought.id,
+                                content: updatedContent,
+                                createdAt: editingThought.createdAt
+                            )
+                            thoughts[index] = updatedThought
+                        }
+                        showEditThought = false
+                        self.editingThought = nil
+                    }
+                )
+            }
+        }
+    }
+    
+    private func startBreathingAnimations() {
+        withAnimation(
+            Animation.easeInOut(duration: 4.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            headerBreathingScale = 1.01
+        }
+    }
+    
+    private func generateFloatingLights() {
+        floatingLights = (0..<3).map { FloatingLight(index: $0) }
+    }
+}
+
+// 想法数据模型
+struct ThoughtItem: Identifiable {
+    let id: UUID
+    let content: String
+    let createdAt: Date
 }
 
