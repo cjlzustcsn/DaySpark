@@ -334,44 +334,17 @@ struct EncourageCardView: View {
 
 
 struct ContentView: View {
-    let barCornerRadius: CGFloat = 0 // 标题栏无圆角
-    let cardAreaCornerRadius: CGFloat = 16 // 纪念日区域顶部圆角
-    let cardSpacing: CGFloat = 20   
-    let cardCount = 8 // 用于演示超出滚动
-    let floatingButtonSize: CGFloat = 56
-    let floatingButtonPadding: CGFloat = 24
-    // 温馨奶油渐变色
-    let mainGradient = LinearGradient(
-        gradient: Gradient(colors: [
-            Color(red: 1.0, green: 0.855, blue: 0.725), // #FFDAB9 粉橙/蜜桃
-            Color(red: 1.0, green: 0.898, blue: 0.705), // #FFE5B4 奶油橙
-            Color(red: 1.0, green: 0.968, blue: 0.839)  // #FFF7D6 浅米黄
-        ]),
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-    let cardGradient = LinearGradient(
-        gradient: Gradient(colors: [
-            Color.white,
-            Color(red: 1.0, green: 0.976, blue: 0.941) // #FFF9F0 淡米白
-        ]),
-        startPoint: .top,
-        endPoint: .bottom
-    )
-    let buttonGradient = LinearGradient(
-        gradient: Gradient(colors: [
-            Color(red: 1.0, green: 0.855, blue: 0.725), // #FFDAB9
-            Color(red: 1.0, green: 0.898, blue: 0.705)  // #FFE5B4
-        ]),
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
     // 抽签功能已移动到详情页面
     @State private var showAddSheet = false
     @State private var showEditSheet = false
     @State private var editingItem: AnniversaryItem?
     @State private var showDetailSheet = false
     @State private var selectedDetailItem: AnniversaryItem? = nil
+    
+    // 呼吸动效状态
+    @State private var floatingLights: [FloatingLight] = []
+    @State private var headerBreathingScale: CGFloat = 1.0
+    @State private var contentBreathingPhase: CGFloat = 0
 
     @State private var anniversaryItems: [AnniversaryItem] = {
         let items = [
@@ -381,41 +354,33 @@ struct ContentView: View {
         // 按创建时间排序（最新的在前）
         return items.sorted { $0.createdAt > $1.createdAt }
     }()
-    func cardAreaHeight(_ geometry: GeometryProxy) -> CGFloat {
-        max(geometry.size.height * 0.72, 320)
-    }
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 // Apple风格的呼吸背景
                 AppleBreathingBackground()
                 
+                // 浮动光点
+                ForEach(floatingLights) { light in
+                    AppleFloatingLight(index: light.index)
+                }
+                
                 VStack(spacing: 0) {
-                    // 顶部标题栏
-                    HeaderView(
-                        mainGradient: mainGradient,
-                        buttonGradient: buttonGradient,
+                    // 顶部标题栏 - Apple风格
+                    AppleBreathingHeaderView(
                         onAddButtonTapped: {
                             showAddSheet = true
                         }
                     )
                     .padding(.top, geometry.safeAreaInsets.top)
-                    // 分割线更淡
-                    Rectangle()
-                        .fill(Color(red: 1.0, green: 0.976, blue: 0.941, opacity: 0.5))
-                        .frame(height: 1)
-                        .shadow(color: Color.clear, radius: 0)
-                    // 纪念日区域最大化
-                    MainContentView(
+                    .scaleEffect(headerBreathingScale)
+                    
+                    // 内容区域
+                    AppleBreathingContentView(
                         anniversaryItems: anniversaryItems,
-                        cardSpacing: cardSpacing,
-                        cardAreaCornerRadius: cardAreaCornerRadius,
-                        floatingButtonSize: floatingButtonSize,
-                        floatingButtonPadding: floatingButtonPadding,
                         onEdit: { item in
-                            // 确保先设置编辑项，再显示sheet
                             editingItem = item
-                            // 使用下一个运行循环来确保状态更新
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                 showEditSheet = true
                             }
@@ -428,29 +393,22 @@ struct ContentView: View {
                             }
                         },
                         onPin: { item in
-                            // 置顶/取消置顶功能
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                                 if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
                                     var updatedItem = anniversaryItems[index]
                                     
                                     if updatedItem.isPinned {
-                                        // 取消置顶：移除置顶状态，按创建时间重新排序
                                         updatedItem.isPinned = false
                                         anniversaryItems.remove(at: index)
-                                        
-                                        // 按创建时间排序（最新的在前）
                                         anniversaryItems.append(updatedItem)
                                         anniversaryItems.sort { item1, item2 in
                                             if item1.isPinned == item2.isPinned {
-                                                // 如果置顶状态相同，按创建时间排序
                                                 return item1.createdAt > item2.createdAt
                                             } else {
-                                                // 置顶的排在前面
                                                 return item1.isPinned && !item2.isPinned
                                             }
                                         }
                                     } else {
-                                        // 置顶：标记为已置顶，移到数组开头
                                         updatedItem.isPinned = true
                                         anniversaryItems.remove(at: index)
                                         anniversaryItems.insert(updatedItem, at: 0)
@@ -459,7 +417,6 @@ struct ContentView: View {
                             }
                         },
                         onTap: { item in
-                            // 点击展开详情页面
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                                 self.selectedDetailItem = item
                                 self.showDetailSheet = true
@@ -469,8 +426,11 @@ struct ContentView: View {
                     .edgesIgnoringSafeArea(.bottom)
                 }
                 .edgesIgnoringSafeArea(.top)
-                // 悬浮抽签按钮 - 已移动到详情页面
             }
+        }
+        .onAppear {
+            startBreathingAnimations()
+            generateFloatingLights()
         }
         .sheet(isPresented: $showAddSheet) {
             AddAnniversaryView(
@@ -494,7 +454,7 @@ struct ContentView: View {
                 }
             )
         }
-                            .sheet(isPresented: Binding(
+        .sheet(isPresented: Binding(
             get: { showEditSheet && editingItem != nil },
             set: { showEditSheet = $0 }
         )) {
@@ -548,7 +508,23 @@ struct ContentView: View {
             }
         )
     }
+    
+    private func startBreathingAnimations() {
+        // 标题栏呼吸动效
+        withAnimation(
+            Animation.easeInOut(duration: 4.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            headerBreathingScale = 1.01
+        }
+    }
+    
+    private func generateFloatingLights() {
+        floatingLights = (0..<3).map { FloatingLight(index: $0) }
+    }
 }
+
+
 
 // MARK: - Apple风格呼吸背景
 struct AppleBreathingBackground: View {
@@ -556,11 +532,9 @@ struct AppleBreathingBackground: View {
     
     var body: some View {
         ZStack {
-            // 主背景 - 使用Apple的系统颜色
             Color(.systemBackground)
                 .ignoresSafeArea()
             
-            // 微妙的呼吸渐变
             RadialGradient(
                 gradient: Gradient(colors: [
                     Color(.systemGray6).opacity(0.3 + 0.2 * Double(sin(breathingPhase))),
@@ -572,11 +546,6 @@ struct AppleBreathingBackground: View {
             )
             .ignoresSafeArea()
             .animation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true), value: breathingPhase)
-            
-            // 微妙的浮动光点
-            ForEach(0..<3, id: \.self) { index in
-                AppleFloatingLight(index: index)
-            }
         }
         .onAppear {
             startBreathing()
@@ -1158,6 +1127,300 @@ struct AnniversaryItemView: View {
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
+    }
+}
+
+// MARK: - Apple风格呼吸标题栏
+struct AppleBreathingHeaderView: View {
+    let onAddButtonTapped: () -> Void
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    
+    var body: some View {
+        HStack {
+            Text("DaySpark")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
+                .shadow(color: Color(.systemGray4).opacity(0.3), radius: 2, x: 0, y: 2)
+            Spacer()
+            Button(action: onAddButtonTapped) {
+                ZStack {
+                    Circle()
+                        .fill(.regularMaterial)
+                        .frame(width: 44, height: 44)
+                        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                    Image(systemName: "plus")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.orange)
+                }
+            }
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
+            .onAppear {
+                startAppleBreathing()
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+        )
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 3.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.05
+            breathingOpacity = 0.9
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸内容区域
+struct AppleBreathingContentView: View {
+    let anniversaryItems: [AnniversaryItem]
+    let onEdit: (AnniversaryItem) -> Void
+    let onDelete: (AnniversaryItem) -> Void
+    let onPin: (AnniversaryItem) -> Void
+    let onTap: (AnniversaryItem) -> Void
+    
+    @State private var contentBreathingPhase: CGFloat = 0
+    
+    var body: some View {
+        ZStack {
+            Color(.systemBackground)
+                .cornerRadius(24, corners: [.topLeft, .topRight])
+                .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: -8)
+            
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    ForEach(anniversaryItems) { item in
+                        AppleBreathingAnniversaryCard(
+                            item: item,
+                            onEdit: { onEdit(item) },
+                            onDelete: { onDelete(item) },
+                            onPin: { onPin(item) },
+                            onTap: { onTap(item) }
+                        )
+                        .transition(.asymmetric(
+                            insertion: .scale.combined(with: .opacity),
+                            removal: .scale.combined(with: .opacity)
+                        ))
+                    }
+                }
+                .padding(.top, 24)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 100)
+            }
+        }
+        .onAppear {
+            startContentBreathing()
+        }
+    }
+    
+    private func startContentBreathing() {
+        withAnimation(.easeInOut(duration: 6.0).repeatForever(autoreverses: true)) {
+            contentBreathingPhase = 1.0
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸纪念日卡片
+struct AppleBreathingAnniversaryCard: View {
+    let item: AnniversaryItem
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    let onPin: () -> Void
+    let onTap: () -> Void
+    
+    @State private var offset: CGFloat = 0
+    @State private var isSwiped = false
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    @State private var shadowRadius: CGFloat = 12
+    
+    // 计算进度条进度
+    private func calculateProgress(for targetDate: Date) -> Double {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        if targetDate <= now {
+            return 1.0
+        }
+        
+        let totalDays = calendar.dateComponents([.day], from: item.createdAt, to: targetDate).day ?? 1
+        let elapsedDays = calendar.dateComponents([.day], from: item.createdAt, to: now).day ?? 0
+        let progress = Double(elapsedDays) / Double(totalDays)
+        
+        return max(0.0, min(1.0, progress))
+    }
+    
+    var body: some View {
+        ZStack {
+            // 背景操作按钮区域
+            HStack(spacing: 0) {
+                Spacer()
+                // 置顶/取消置顶按钮
+                Button(action: onPin) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(item.isPinned ? Color.gray : Color.blue)
+                            .frame(width: 60, height: 120)
+                        VStack(spacing: 4) {
+                            Image(systemName: item.isPinned ? "pin.slash" : "pin")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                            Text(item.isPinned ? "取消" : "置顶")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .frame(width: 60, height: 120)
+                
+                // 编辑按钮
+                Button(action: onEdit) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color.orange)
+                            .frame(width: 60, height: 120)
+                        VStack(spacing: 4) {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                            Text("编辑")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .frame(width: 60, height: 120)
+                
+                // 删除按钮
+                Button(action: onDelete) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color.red)
+                            .frame(width: 60, height: 120)
+                        VStack(spacing: 4) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                            Text("删除")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .frame(width: 60, height: 120)
+            }
+            .padding(.trailing, 20)
+            .opacity(isSwiped ? 1 : 0)
+            .animation(.easeInOut(duration: 0.3), value: isSwiped)
+            
+            // 主卡片
+            AppleBreathingCard {
+                VStack(alignment: .leading, spacing: 16) {
+                    // 顶部信息
+                    HStack {
+                        Text(item.icon)
+                            .font(.system(size: 32))
+                            .modifier(AppleBreathingIconModifier())
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.event)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.primary)
+                            Text(DateFormatter.localizedString(from: item.date, dateStyle: .medium, timeStyle: .none))
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        
+                        if item.isPinned {
+                            Image(systemName: "pin.fill")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    
+                    // 进度条
+                    VStack(alignment: .leading, spacing: 8) {
+                        let progress = calculateProgress(for: item.date)
+                        let daysLeft = Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0
+                        let isFuture = item.date > Date()
+                        
+                        ProgressView(value: progress)
+                            .accentColor(isFuture ? Color.orange : Color.green)
+                            .scaleEffect(x: 1, y: 1.5, anchor: .center)
+                            .modifier(AppleBreathingProgressModifier(color: isFuture ? Color.orange : Color.green))
+                        
+                        HStack {
+                            Text(isFuture ? "还有" : "已陪伴")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("\(abs(daysLeft))天")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(isFuture ? Color.orange : Color.green)
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .offset(x: offset)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        if value.translation.width < 0 {
+                            offset = value.translation.width
+                            isSwiped = true
+                        }
+                    }
+                    .onEnded { value in
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            if value.translation.width < -50 {
+                                offset = -180
+                                isSwiped = true
+                            } else {
+                                offset = 0
+                                isSwiped = false
+                            }
+                        }
+                    }
+            )
+            .onTapGesture {
+                if !isSwiped {
+                    onTap()
+                }
+            }
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
+            .shadow(
+                color: item.isPinned ? Color.blue.opacity(0.15) : item.color.opacity(0.1),
+                radius: shadowRadius,
+                x: 0,
+                y: 6
+            )
+            .onAppear {
+                startAppleBreathing()
+            }
+        }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 5.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.02
+            breathingOpacity = 0.98
+            shadowRadius = 16
+        }
     }
 }
 
