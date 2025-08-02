@@ -345,6 +345,9 @@ struct ContentView: View {
     @State private var floatingLights: [FloatingLight] = []
     @State private var headerBreathingScale: CGFloat = 1.0
     @State private var contentBreathingPhase: CGFloat = 0
+    
+    // 全局展开状态管理
+    @State private var expandedItemId: UUID? = nil
 
     @State private var anniversaryItems: [AnniversaryItem] = {
         let items = [
@@ -379,6 +382,7 @@ struct ContentView: View {
                     // 内容区域
                     AppleBreathingContentView(
                         anniversaryItems: anniversaryItems,
+                        expandedItemId: $expandedItemId,
                         onEdit: { item in
                             editingItem = item
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -393,6 +397,8 @@ struct ContentView: View {
                             }
                         },
                         onPin: { item in
+                            // 点击置顶时自动退出展开状态
+                            expandedItemId = nil
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                                 if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
                                     var updatedItem = anniversaryItems[index]
@@ -417,6 +423,8 @@ struct ContentView: View {
                             }
                         },
                         onTap: { item in
+                            // 点击item时自动退出展开状态
+                            expandedItemId = nil
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                                 self.selectedDetailItem = item
                                 self.showDetailSheet = true
@@ -1183,6 +1191,7 @@ struct AppleBreathingHeaderView: View {
 // MARK: - Apple风格呼吸内容区域
 struct AppleBreathingContentView: View {
     let anniversaryItems: [AnniversaryItem]
+    @Binding var expandedItemId: UUID?
     let onEdit: (AnniversaryItem) -> Void
     let onDelete: (AnniversaryItem) -> Void
     let onPin: (AnniversaryItem) -> Void
@@ -1195,12 +1204,28 @@ struct AppleBreathingContentView: View {
             Color(.systemBackground)
                 .cornerRadius(24, corners: [.topLeft, .topRight])
                 .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: -8)
+                .onTapGesture {
+                    // 点击空白处退出展开状态
+                    if expandedItemId != nil {
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            expandedItemId = nil
+                        }
+                    }
+                }
             
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 20) {
                     ForEach(anniversaryItems) { item in
                         AppleBreathingAnniversaryCard(
                             item: item,
+                            isExpanded: expandedItemId == item.id,
+                            onExpandChange: { isExpanded in
+                                if isExpanded {
+                                    expandedItemId = item.id
+                                } else {
+                                    expandedItemId = nil
+                                }
+                            },
                             onEdit: { onEdit(item) },
                             onDelete: { onDelete(item) },
                             onPin: { onPin(item) },
@@ -1232,13 +1257,14 @@ struct AppleBreathingContentView: View {
 // MARK: - Apple风格呼吸纪念日卡片
 struct AppleBreathingAnniversaryCard: View {
     let item: AnniversaryItem
+    let isExpanded: Bool
+    let onExpandChange: (Bool) -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onPin: () -> Void
     let onTap: () -> Void
     
     @State private var offset: CGFloat = 0
-    @State private var isSwiped = false
     @State private var breathingScale: CGFloat = 1.0
     @State private var breathingOpacity: Double = 1.0
     @State private var shadowRadius: CGFloat = 12
@@ -1292,9 +1318,9 @@ struct AppleBreathingAnniversaryCard: View {
                     )
                 }
                 .padding(.trailing, 20)
-                .opacity(isSwiped ? 1 : 0)
-                .scaleEffect(isSwiped ? 1.0 : 0.8)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isSwiped)
+                .opacity(isExpanded ? 1 : 0)
+                .scaleEffect(isExpanded ? 1.0 : 0.8)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isExpanded)
             }
             
             // 主卡片
@@ -1355,7 +1381,10 @@ struct AppleBreathingAnniversaryCard: View {
                             // 限制最大滑动距离，让动效更自然
                             let maxOffset: CGFloat = -200
                             offset = max(value.translation.width, maxOffset)
-                            isSwiped = value.translation.width < -30
+                            let shouldExpand = value.translation.width < -30
+                            if shouldExpand != isExpanded {
+                                onExpandChange(shouldExpand)
+                            }
                         }
                     }
                     .onEnded { value in
@@ -1363,18 +1392,24 @@ struct AppleBreathingAnniversaryCard: View {
                             if value.translation.width < -80 {
                                 // 完全展开
                                 offset = -200
-                                isSwiped = true
+                                onExpandChange(true)
                             } else {
                                 // 回弹到原位
                                 offset = 0
-                                isSwiped = false
+                                onExpandChange(false)
                             }
                         }
                     }
             )
             .onTapGesture {
-                if !isSwiped {
+                if !isExpanded {
                     onTap()
+                }
+            }
+            .onChange(of: isExpanded) { newValue in
+                // 同步offset状态
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    offset = newValue ? -200 : 0
                 }
             }
             .scaleEffect(breathingScale)
