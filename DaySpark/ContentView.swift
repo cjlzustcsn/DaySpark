@@ -1261,66 +1261,41 @@ struct AppleBreathingAnniversaryCard: View {
     
     var body: some View {
         ZStack {
-            // 背景操作按钮区域
+            // 背景操作按钮区域 - Apple风格
             HStack(spacing: 0) {
                 Spacer()
-                // 置顶/取消置顶按钮
-                Button(action: onPin) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(item.isPinned ? Color.gray : Color.blue)
-                            .frame(width: 60, height: 120)
-                        VStack(spacing: 4) {
-                            Image(systemName: item.isPinned ? "pin.slash" : "pin")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.white)
-                            Text(item.isPinned ? "取消" : "置顶")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
-                .frame(width: 60, height: 120)
                 
-                // 编辑按钮
-                Button(action: onEdit) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color.orange)
-                            .frame(width: 60, height: 120)
-                        VStack(spacing: 4) {
-                            Image(systemName: "pencil")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.white)
-                            Text("编辑")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                    }
+                // 操作按钮容器
+                HStack(spacing: 8) {
+                    // 置顶/取消置顶按钮
+                    AppleBreathingActionButton(
+                        icon: item.isPinned ? "pin.slash" : "pin",
+                        title: item.isPinned ? "取消" : "置顶",
+                        color: item.isPinned ? Color.gray : Color.blue,
+                        action: onPin
+                    )
+                    
+                    // 编辑按钮
+                    AppleBreathingActionButton(
+                        icon: "pencil",
+                        title: "编辑",
+                        color: Color.orange,
+                        action: onEdit
+                    )
+                    
+                    // 删除按钮
+                    AppleBreathingActionButton(
+                        icon: "trash",
+                        title: "删除",
+                        color: Color.red,
+                        action: onDelete
+                    )
                 }
-                .frame(width: 60, height: 120)
-                
-                // 删除按钮
-                Button(action: onDelete) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color.red)
-                            .frame(width: 60, height: 120)
-                        VStack(spacing: 4) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.white)
-                            Text("删除")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
-                .frame(width: 60, height: 120)
+                .padding(.trailing, 20)
+                .opacity(isSwiped ? 1 : 0)
+                .scaleEffect(isSwiped ? 1.0 : 0.8)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isSwiped)
             }
-            .padding(.trailing, 20)
-            .opacity(isSwiped ? 1 : 0)
-            .animation(.easeInOut(duration: 0.3), value: isSwiped)
             
             // 主卡片
             AppleBreathingCard {
@@ -1377,16 +1352,20 @@ struct AppleBreathingAnniversaryCard: View {
                 DragGesture()
                     .onChanged { value in
                         if value.translation.width < 0 {
-                            offset = value.translation.width
-                            isSwiped = true
+                            // 限制最大滑动距离，让动效更自然
+                            let maxOffset: CGFloat = -200
+                            offset = max(value.translation.width, maxOffset)
+                            isSwiped = value.translation.width < -30
                         }
                     }
                     .onEnded { value in
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            if value.translation.width < -50 {
-                                offset = -180
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            if value.translation.width < -80 {
+                                // 完全展开
+                                offset = -200
                                 isSwiped = true
                             } else {
+                                // 回弹到原位
                                 offset = 0
                                 isSwiped = false
                             }
@@ -2159,6 +2138,55 @@ struct AppleBreathingDetailCardView: View {
             breathingScale = 1.02
             breathingOpacity = 0.98
             shadowRadius = 16
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸操作按钮
+struct AppleBreathingActionButton: View {
+    let icon: String
+    let title: String
+    let color: Color
+    let action: () -> Void
+    
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 44, height: 44)
+                        .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                
+                Text(title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(breathingScale)
+        .opacity(breathingOpacity)
+        .onAppear {
+            startAppleBreathing()
+        }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 3.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.05
+            breathingOpacity = 0.9
         }
     }
 }
