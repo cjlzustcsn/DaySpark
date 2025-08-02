@@ -43,6 +43,7 @@ struct HeaderView: View {
                 }
             }
             .buttonStyle(PlainButtonStyle())
+            .modifier(AppleBreathingButtonModifier())
         }
         .padding(.horizontal)
         .frame(height: 56)
@@ -340,6 +341,9 @@ struct ContentView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
+                // Apple风格的呼吸背景
+                AppleBreathingBackground()
+                
                 VStack(spacing: 0) {
                     // 顶部标题栏
                     HeaderView(
@@ -497,6 +501,208 @@ struct ContentView: View {
                 }
             }
         )
+    }
+}
+
+// MARK: - Apple风格呼吸背景
+struct AppleBreathingBackground: View {
+    @State private var breathingPhase: CGFloat = 0
+    
+    var body: some View {
+        ZStack {
+            // 主背景 - 使用Apple的系统颜色
+            Color(.systemBackground)
+                .ignoresSafeArea()
+            
+            // 微妙的呼吸渐变
+            RadialGradient(
+                gradient: Gradient(colors: [
+                    Color(.systemGray6).opacity(0.3 + 0.2 * Double(sin(breathingPhase))),
+                    Color(.systemBackground)
+                ]),
+                center: .center,
+                startRadius: 100,
+                endRadius: 300
+            )
+            .ignoresSafeArea()
+            .animation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true), value: breathingPhase)
+            
+            // 微妙的浮动光点
+            ForEach(0..<3, id: \.self) { index in
+                AppleFloatingLight(index: index)
+            }
+        }
+        .onAppear {
+            startBreathing()
+        }
+    }
+    
+    private func startBreathing() {
+        withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
+            breathingPhase = 1.0
+        }
+    }
+}
+
+// MARK: - Apple风格浮动光点
+struct AppleFloatingLight: View {
+    let index: Int
+    @State private var offset: CGSize = .zero
+    @State private var opacity: Double = 0.1
+    @State private var scale: CGFloat = 0.8
+    
+    var body: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(.systemBlue).opacity(0.1),
+                        Color.clear
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: 60 + CGFloat(index * 20), height: 60 + CGFloat(index * 20))
+            .offset(offset)
+            .opacity(opacity)
+            .scaleEffect(scale)
+            .blur(radius: 20)
+            .onAppear {
+                startFloating()
+            }
+    }
+    
+    private func startFloating() {
+        let randomX = CGFloat.random(in: -100...100)
+        let randomY = CGFloat.random(in: -200...200)
+        let duration = Double.random(in: 8...12)
+        let delay = Double(index) * 1.5
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
+                offset = CGSize(width: randomX, height: randomY)
+                opacity = Double.random(in: 0.05...0.15)
+                scale = CGFloat.random(in: 0.6...1.2)
+            }
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸卡片修饰器
+struct AppleBreathingCardModifier: ViewModifier {
+    let item: AnniversaryItem
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    @State private var shadowRadius: CGFloat = 6
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
+            .shadow(
+                color: item.isPinned ? 
+                    Color.blue.opacity(0.15 + 0.05 * Double(sin(breathingScale * .pi))) : 
+                    item.color.opacity(0.10 + 0.03 * Double(sin(breathingScale * .pi))),
+                radius: shadowRadius,
+                x: 0,
+                y: 3
+            )
+            .onAppear {
+                startAppleBreathing()
+            }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 6.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.01
+            breathingOpacity = 0.98
+            shadowRadius = 8
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸图标修饰器
+struct AppleBreathingIconModifier: ViewModifier {
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingRotation: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(breathingScale)
+            .rotationEffect(.degrees(breathingRotation))
+            .onAppear {
+                startAppleBreathing()
+            }
+    }
+    
+    private func startAppleBreathing() {
+        // 微妙的缩放呼吸
+        withAnimation(
+            Animation.easeInOut(duration: 4.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.05
+        }
+        
+        // 非常轻微的摇摆
+        withAnimation(
+            Animation.easeInOut(duration: 8.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingRotation = 2
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸按钮修饰器
+struct AppleBreathingButtonModifier: ViewModifier {
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var breathingOpacity: Double = 1.0
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(breathingScale)
+            .opacity(breathingOpacity)
+            .onAppear {
+                startAppleBreathing()
+            }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 3.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.03
+            breathingOpacity = 0.9
+        }
+    }
+}
+
+// MARK: - Apple风格呼吸进度条修饰器
+struct AppleBreathingProgressModifier: ViewModifier {
+    let color: Color
+    @State private var breathingScale: CGFloat = 1.0
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(breathingScale)
+            .onAppear {
+                startAppleBreathing()
+            }
+    }
+    
+    private func startAppleBreathing() {
+        withAnimation(
+            Animation.easeInOut(duration: 4.0)
+                .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.02
+        }
     }
 }
 
@@ -684,6 +890,7 @@ struct AnniversaryCardView: View {
                 )
                 .shadow(color: item.isPinned ? Color.blue.opacity(0.15) : item.color.opacity(0.10), radius: 6, x: 0, y: 3)
                 .frame(height: 112)
+                .modifier(AppleBreathingCardModifier(item: item))
                 .overlay(
                     AnniversaryItemView(
                         type: item.event,
@@ -754,6 +961,7 @@ struct AnniversaryItemView: View {
                     .frame(width: 44, height: 44)
                 Text(icon)
                     .font(.system(size: 24))
+                    .modifier(AppleBreathingIconModifier())
             }
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -780,6 +988,7 @@ struct AnniversaryItemView: View {
                     .accentColor(isFuture ? Color(red: 0.9, green: 0.6, blue: 0.3) : Color(red: 0.4, green: 0.7, blue: 0.4))
                     .scaleEffect(x: 1, y: 1.5, anchor: .center)
                     .animation(.easeInOut(duration: 0.8), value: progress)
+                    .modifier(AppleBreathingProgressModifier(color: isFuture ? Color(red: 0.9, green: 0.6, blue: 0.3) : Color(red: 0.4, green: 0.7, blue: 0.4)))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .trailing, spacing: 4) {
