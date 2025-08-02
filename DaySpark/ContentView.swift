@@ -706,6 +706,99 @@ struct AppleBreathingProgressModifier: ViewModifier {
     }
 }
 
+// MARK: - 详情页静态卡片组件
+struct DetailPageCardView: View {
+    let item: AnniversaryItem
+    
+    // 计算进度条进度
+    private func calculateProgress(for targetDate: Date) -> Double {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // 如果纪念日已经过了，进度条为100%
+        if targetDate <= now {
+            return 1.0
+        }
+        
+        // 计算创建时间到目标日期的总天数
+        let totalDays = calendar.dateComponents([.day], from: item.createdAt, to: targetDate).day ?? 1
+        
+        // 计算从创建时间到现在已经经过的天数
+        let elapsedDays = calendar.dateComponents([.day], from: item.createdAt, to: now).day ?? 0
+        
+        // 计算进度：(已经经过的日期 - 创建日) / (目标日 - 创建日)
+        let progress = Double(elapsedDays) / Double(totalDays)
+        
+        // 确保进度在0-1范围内
+        return max(0.0, min(1.0, progress))
+    }
+    
+    var body: some View {
+        // 纪念日卡片 - 静态版本，不包含呼吸动效
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(
+                item.isPinned ? 
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.blue.opacity(0.15),
+                        Color.blue.opacity(0.08)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ) : 
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        item.color.opacity(0.13),
+                        item.color.opacity(0.13)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                // 置顶标识 - 左下角
+                Group {
+                    if item.isPinned {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                // 简洁的向上箭头角标
+                                ZStack {
+                                    // 三角形背景
+                                    Triangle()
+                                        .fill(Color.blue.opacity(0.9))
+                                        .frame(width: 20, height: 16)
+                                    // 向上箭头
+                                    Image(systemName: "chevron.up")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .offset(y: -1)
+                                }
+                                .padding(.bottom, 8)
+                                .padding(.leading, 8)
+                                Spacer()
+                            }
+                        }
+                    }
+                }
+            )
+            .shadow(color: item.isPinned ? Color.blue.opacity(0.15) : item.color.opacity(0.10), radius: 6, x: 0, y: 3)
+            .frame(height: 112)
+            .overlay(
+                AnniversaryItemView(
+                    type: item.event,
+                    targetDate: DateFormatter.localizedString(from: item.date, dateStyle: .medium, timeStyle: .none),
+                    daysLeft: Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0,
+                    progress: calculateProgress(for: item.date),
+                    isFuture: item.date > Date(),
+                    icon: item.icon,
+                    color: item.color,
+                    isPinned: item.isPinned
+                )
+            )
+    }
+}
+
 // 毛玻璃封装
 import UIKit
 struct VisualEffectBlur: UIViewRepresentable {
@@ -1105,16 +1198,9 @@ struct AnniversaryDetailView: View {
                 
                 // 纪念日卡片区域
                 VStack(spacing: 20) {
-                    // 纪念日卡片（与主页面完全一致）
-                    AnniversaryCardView(
-                        item: item,
-                        onEdit: { /* 详情页面不提供编辑功能 */ },
-                        onDelete: { /* 详情页面不提供删除功能 */ },
-                        onPin: { /* 详情页面不提供置顶功能 */ },
-                        onTap: { /* 详情页面不提供点击展开功能 */ }
-                    )
-                    .allowsHitTesting(false) // 禁用交互
-                    .padding(.horizontal, 20)
+                    // 详情页静态卡片（不包含呼吸动效）
+                    DetailPageCardView(item: item)
+                        .padding(.horizontal, 20)
                 }
                 .padding(.top, 16)
                 .padding(.bottom, 24)
