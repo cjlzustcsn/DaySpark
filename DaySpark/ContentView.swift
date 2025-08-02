@@ -1205,7 +1205,7 @@ struct AppleBreathingContentView: View {
                 .cornerRadius(24, corners: [.topLeft, .topRight])
                 .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: -8)
                 .onTapGesture {
-                    // 点击空白处退出展开状态
+                    // 点击背景区域时退出展开状态
                     if expandedItemId != nil {
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                             expandedItemId = nil
@@ -1240,6 +1240,24 @@ struct AppleBreathingContentView: View {
                 .padding(.top, 24)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 100)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    // 点击非纪念日item区域时退出展开状态
+                    if expandedItemId != nil {
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            expandedItemId = nil
+                        }
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // 点击ScrollView空白区域时退出展开状态
+                if expandedItemId != nil {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        expandedItemId = nil
+                    }
+                }
             }
         }
         .onAppear {
