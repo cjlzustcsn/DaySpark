@@ -381,7 +381,7 @@ struct ContentView: View {
                     
                     // 内容区域
                     AppleBreathingContentView(
-                        anniversaryItems: anniversaryItems,
+                        anniversaryItems: $anniversaryItems,
                         expandedItemId: $expandedItemId,
                         onEdit: { item in
                             editingItem = item
@@ -1190,7 +1190,7 @@ struct AppleBreathingHeaderView: View {
 
 // MARK: - Apple风格呼吸内容区域
 struct AppleBreathingContentView: View {
-    let anniversaryItems: [AnniversaryItem]
+    @Binding var anniversaryItems: [AnniversaryItem]
     @Binding var expandedItemId: UUID?
     let onEdit: (AnniversaryItem) -> Void
     let onDelete: (AnniversaryItem) -> Void
@@ -1198,6 +1198,8 @@ struct AppleBreathingContentView: View {
     let onTap: (AnniversaryItem) -> Void
     
     @State private var contentBreathingPhase: CGFloat = 0
+    @State private var draggedItemId: UUID? = nil
+    @State private var dropTargetId: UUID? = nil
     
     var body: some View {
         ZStack {
@@ -1214,11 +1216,13 @@ struct AppleBreathingContentView: View {
                 }
             
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
+                LazyVStack(spacing: 20) {
                     ForEach(anniversaryItems) { item in
                         AppleBreathingAnniversaryCard(
                             item: item,
                             isExpanded: expandedItemId == item.id,
+                            isDragging: draggedItemId == item.id,
+                            isDropTarget: dropTargetId == item.id,
                             onExpandChange: { isExpanded in
                                 if isExpanded {
                                     expandedItemId = item.id
@@ -1234,6 +1238,26 @@ struct AppleBreathingContentView: View {
                         .transition(.asymmetric(
                             insertion: .scale.combined(with: .opacity),
                             removal: .scale.combined(with: .opacity)
+                        ))
+                        .onDrag {
+                            // 开始拖拽时退出展开状态
+                            if expandedItemId != nil {
+                                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                    expandedItemId = nil
+                                }
+                            }
+                            // 设置拖拽状态
+                            draggedItemId = item.id
+                            return NSItemProvider(object: item.id.uuidString as NSString)
+                        }
+                        .onLongPressGesture(minimumDuration: 0.5) {
+                            // 长按手势，触发拖拽
+                        }
+                        .onDrop(of: [.text], delegate: SimpleDropDelegate(
+                            item: item,
+                            items: $anniversaryItems,
+                            draggedItemId: $draggedItemId,
+                            dropTargetId: $dropTargetId
                         ))
                     }
                 }
@@ -1272,10 +1296,69 @@ struct AppleBreathingContentView: View {
     }
 }
 
+// MARK: - 增强拖拽排序代理
+struct SimpleDropDelegate: DropDelegate {
+    let item: AnniversaryItem
+    @Binding var items: [AnniversaryItem]
+    @Binding var draggedItemId: UUID?
+    @Binding var dropTargetId: UUID?
+    
+    func performDrop(info: DropInfo) -> Bool {
+        // 重置拖拽状态
+        draggedItemId = nil
+        dropTargetId = nil
+        
+        guard let itemProvider = info.itemProviders(for: [.text]).first else { return false }
+        
+        itemProvider.loadObject(ofClass: NSString.self) { string, _ in
+            DispatchQueue.main.async {
+                if let idString = string as? String, let draggedId = UUID(uuidString: idString) {
+                    self.reorderItems(draggedId: draggedId, droppedId: self.item.id)
+                }
+            }
+        }
+        return true
+    }
+    
+    func dropEntered(info: DropInfo) {
+        guard let itemProvider = info.itemProviders(for: [.text]).first else { return }
+        
+        itemProvider.loadObject(ofClass: NSString.self) { string, _ in
+            DispatchQueue.main.async {
+                if let idString = string as? String, let draggedId = UUID(uuidString: idString) {
+                    self.draggedItemId = draggedId
+                    self.dropTargetId = self.item.id
+                }
+            }
+        }
+    }
+    
+    func dropExited(info: DropInfo) {
+        dropTargetId = nil
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+    
+    private func reorderItems(draggedId: UUID, droppedId: UUID) {
+        guard let draggedIndex = items.firstIndex(where: { $0.id == draggedId }),
+              let droppedIndex = items.firstIndex(where: { $0.id == droppedId }),
+              draggedIndex != droppedIndex else { return }
+        
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            let draggedItem = items.remove(at: draggedIndex)
+            items.insert(draggedItem, at: droppedIndex)
+        }
+    }
+}
+
 // MARK: - Apple风格呼吸纪念日卡片
 struct AppleBreathingAnniversaryCard: View {
     let item: AnniversaryItem
     let isExpanded: Bool
+    let isDragging: Bool
+    let isDropTarget: Bool
     let onExpandChange: (Bool) -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -1430,6 +1513,26 @@ struct AppleBreathingAnniversaryCard: View {
                     offset = newValue ? -200 : 0
                 }
             }
+            // 拖拽状态视觉反馈
+            .scaleEffect(isDragging ? 1.05 : 1.0)
+            .shadow(
+                color: isDragging ? Color.blue.opacity(0.3) : Color.clear,
+                radius: isDragging ? 20 : 0,
+                x: 0,
+                y: isDragging ? 10 : 0
+            )
+            .overlay(
+                // 拖拽目标指示器
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        isDropTarget ? Color.blue : Color.clear,
+                        lineWidth: 3
+                    )
+                    .scaleEffect(isDropTarget ? 1.02 : 1.0)
+                    .opacity(isDropTarget ? 0.8 : 0)
+            )
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragging)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDropTarget)
             .scaleEffect(breathingScale)
             .opacity(breathingOpacity)
             .shadow(
