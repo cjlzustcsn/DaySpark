@@ -2598,42 +2598,113 @@ class AnniversaryPersistenceService: ObservableObject {
     
     private init() {
         loadAnniversaries()
+        
+        // 监听应用生命周期，确保数据保存
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillTerminate),
+            name: UIApplication.willTerminateNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc private func appWillTerminate() {
+        saveAnniversaries()
+    }
+    
+    @objc private func appDidEnterBackground() {
+        saveAnniversaries()
     }
     
     // 保存纪念日数据
     func saveAnniversaries() {
+        print("💾 开始保存纪念日数据，当前有 \(anniversaryItems.count) 条记录...")
+        
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             let encoded = try encoder.encode(anniversaryItems)
             userDefaults.set(encoded, forKey: anniversaryKey)
-            userDefaults.synchronize()
+            userDefaults.synchronize() // 强制同步到磁盘
+            
+            print("✅ 纪念日数据保存成功，键名: \(anniversaryKey)")
+            
+            // 验证保存结果
+            if let savedData = userDefaults.data(forKey: anniversaryKey) {
+                print("🔍 验证保存结果：数据大小 \(savedData.count) 字节")
+            }
         } catch {
-            // 保存失败时的处理
+            print("❌ 纪念日数据保存失败: \(error)")
         }
     }
     
     // 加载纪念日数据
     func loadAnniversaries() {
-        if let data = userDefaults.data(forKey: anniversaryKey),
-           let decoded = try? JSONDecoder().decode([AnniversaryItem].self, from: data) {
-            anniversaryItems = decoded
+        print("📖 开始加载纪念日数据...")
+        print("🔑 使用的键名: \(anniversaryKey)")
+        
+        // 检查 UserDefaults 中是否有数据
+        if userDefaults.object(forKey: anniversaryKey) != nil {
+            print("🔍 在 UserDefaults 中找到数据对象")
         } else {
-            // 使用固定的UUID，确保应用重启后ID保持一致
-            let defaultBirthdayId = UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
-            let defaultNewYearId = UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()
-            
-            anniversaryItems = [
-                AnniversaryItem(id: defaultBirthdayId, event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
-                AnniversaryItem(id: defaultNewYearId, event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
-            ]
-            saveAnniversaries()
+            print("🔍 UserDefaults 中没有找到数据对象")
         }
+        
+        if let data = userDefaults.data(forKey: anniversaryKey) {
+            print("📊 从 UserDefaults 获取到数据，大小: \(data.count) 字节")
+            
+            do {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let decoded = try decoder.decode([AnniversaryItem].self, from: data)
+                anniversaryItems = decoded
+                print("✅ 从 UserDefaults 成功加载 \(anniversaryItems.count) 条纪念日记录")
+                
+                // 打印每条记录的基本信息
+                for (index, item) in anniversaryItems.enumerated() {
+                    print("   📝 纪念日 \(index + 1): ID=\(item.id), 事件=\(item.event), 日期=\(item.date)")
+                }
+            } catch {
+                print("❌ UserDefaults 解码失败: \(error)")
+                print("🔍 使用默认数据...")
+                loadDefaultAnniversaries()
+            }
+        } else {
+            print("❌ UserDefaults 中没有找到纪念日数据，使用默认数据...")
+            loadDefaultAnniversaries()
+        }
+    }
+    
+    // 加载默认纪念日数据
+    private func loadDefaultAnniversaries() {
+        print("📝 加载默认纪念日数据...")
+        // 使用固定的UUID，确保应用重启后ID保持一致
+        let defaultBirthdayId = UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
+        let defaultNewYearId = UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()
+        
+        anniversaryItems = [
+            AnniversaryItem(id: defaultBirthdayId, event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
+            AnniversaryItem(id: defaultNewYearId, event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
+        ]
+        saveAnniversaries()
     }
     
     // 添加纪念日
     func addAnniversary(_ item: AnniversaryItem) {
+        print("➕ 添加纪念日: ID=\(item.id), 事件=\(item.event)")
         anniversaryItems.append(item)
+        print("📊 添加后总记录数: \(anniversaryItems.count)")
         saveAnniversaries()
     }
     
