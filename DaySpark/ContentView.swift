@@ -8,7 +8,7 @@
 import SwiftUI
 
 // AnniversaryItem 数据结构
-struct AnniversaryItem: Identifiable {
+struct AnniversaryItem: Identifiable, Codable {
     let id: UUID
     let event: String
     let date: Date
@@ -16,6 +16,59 @@ struct AnniversaryItem: Identifiable {
     let icon: String
     let createdAt: Date // 添加创建时间
     var isPinned: Bool = false // 添加置顶状态
+    
+    // 为 Color 添加编码支持
+    enum CodingKeys: String, CodingKey {
+        case id, event, date, icon, createdAt, isPinned
+        case colorRed, colorGreen, colorBlue
+    }
+    
+    init(id: UUID, event: String, date: Date, color: Color, icon: String, createdAt: Date, isPinned: Bool = false) {
+        self.id = id
+        self.event = event
+        self.date = date
+        self.color = color
+        self.icon = icon
+        self.createdAt = createdAt
+        self.isPinned = isPinned
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        event = try container.decode(String.self, forKey: .event)
+        date = try container.decode(Date.self, forKey: .date)
+        icon = try container.decode(String.self, forKey: .icon)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        isPinned = try container.decode(Bool.self, forKey: .isPinned)
+        
+        let red = try container.decode(Double.self, forKey: .colorRed)
+        let green = try container.decode(Double.self, forKey: .colorGreen)
+        let blue = try container.decode(Double.self, forKey: .colorBlue)
+        color = Color(red: red, green: green, blue: blue)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(event, forKey: .event)
+        try container.encode(date, forKey: .date)
+        try container.encode(icon, forKey: .icon)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(isPinned, forKey: .isPinned)
+        
+        // 将 Color 转换为 RGB 值
+        if let components = color.cgColor?.components {
+            try container.encode(components[0], forKey: .colorRed)
+            try container.encode(components[1], forKey: .colorGreen)
+            try container.encode(components[2], forKey: .colorBlue)
+        } else {
+            // 默认值
+            try container.encode(0.5, forKey: .colorRed)
+            try container.encode(0.5, forKey: .colorGreen)
+            try container.encode(0.5, forKey: .colorBlue)
+        }
+    }
 }
 
 // HeaderView 组件
@@ -349,14 +402,8 @@ struct ContentView: View {
     // 全局展开状态管理
     @State private var expandedItemId: UUID? = nil
 
-    @State private var anniversaryItems: [AnniversaryItem] = {
-        let items = [
-            AnniversaryItem(id: UUID(), event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
-            AnniversaryItem(id: UUID(), event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
-        ]
-        // 按创建时间排序（最新的在前）
-        return items.sorted { $0.createdAt > $1.createdAt }
-    }()
+    // 使用持久化服务
+    @StateObject private var anniversaryService = AnniversaryPersistenceService.shared
     
     var body: some View {
         GeometryReader { geometry in
@@ -381,7 +428,7 @@ struct ContentView: View {
                     
                     // 内容区域
                     AppleBreathingContentView(
-                        anniversaryItems: $anniversaryItems,
+                        anniversaryItems: $anniversaryService.anniversaryItems,
                         expandedItemId: $expandedItemId,
                         onEdit: { item in
                             editingItem = item
@@ -391,35 +438,14 @@ struct ContentView: View {
                         },
                         onDelete: { item in
                             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                                if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
-                                    anniversaryItems.remove(at: index)
-                                }
+                                anniversaryService.deleteAnniversary(item)
                             }
                         },
                         onPin: { item in
                             // 点击置顶时自动退出展开状态
                             expandedItemId = nil
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
-                                    var updatedItem = anniversaryItems[index]
-                                    
-                                    if updatedItem.isPinned {
-                                        updatedItem.isPinned = false
-                                        anniversaryItems.remove(at: index)
-                                        anniversaryItems.append(updatedItem)
-                                        anniversaryItems.sort { item1, item2 in
-                                            if item1.isPinned == item2.isPinned {
-                                                return item1.createdAt > item2.createdAt
-                                            } else {
-                                                return item1.isPinned && !item2.isPinned
-                                            }
-                                        }
-                                    } else {
-                                        updatedItem.isPinned = true
-                                        anniversaryItems.remove(at: index)
-                                        anniversaryItems.insert(updatedItem, at: 0)
-                                    }
-                                }
+                                anniversaryService.togglePin(item)
                             }
                         },
                         onTap: { item in
@@ -446,17 +472,7 @@ struct ContentView: View {
                 onSave: { event, date, color, icon in
                     let newItem = AnniversaryItem(id: UUID(), event: event, date: date, color: color, icon: icon, createdAt: Date())
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                        anniversaryItems.append(newItem)
-                        // 按创建时间重新排序（最新的在前）
-                        anniversaryItems.sort { item1, item2 in
-                            if item1.isPinned == item2.isPinned {
-                                // 如果置顶状态相同，按创建时间排序
-                                return item1.createdAt > item2.createdAt
-                            } else {
-                                // 置顶的排在前面
-                                return item1.isPinned && !item2.isPinned
-                            }
-                        }
+                        anniversaryService.addAnniversary(newItem)
                     }
                     showAddSheet = false
                 }
@@ -474,20 +490,18 @@ struct ContentView: View {
                         self.editingItem = nil // 使用self来访问状态变量
                     },
                     onSave: { event, date, color, icon in
-                        if let index = anniversaryItems.firstIndex(where: { $0.id == editingItem.id }) {
-                            var updatedItem = AnniversaryItem(
-                                id: editingItem.id,
-                                event: event,
-                                date: date,
-                                color: color,
-                                icon: icon,
-                                createdAt: editingItem.createdAt // 保持创建时间
-                            )
-                            // 保持置顶状态
-                            updatedItem.isPinned = editingItem.isPinned
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                                anniversaryItems[index] = updatedItem
-                            }
+                        var updatedItem = AnniversaryItem(
+                            id: editingItem.id,
+                            event: event,
+                            date: date,
+                            color: color,
+                            icon: icon,
+                            createdAt: editingItem.createdAt // 保持创建时间
+                        )
+                        // 保持置顶状态
+                        updatedItem.isPinned = editingItem.isPinned
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            anniversaryService.updateAnniversary(updatedItem)
                         }
                         showEditSheet = false
                         self.editingItem = nil // 使用self来访问状态变量
@@ -2354,7 +2368,7 @@ struct AppleBreathingActionButton: View {
 struct AnniversaryDetailView: View {
     let item: AnniversaryItem
     let onDismiss: () -> Void
-    @State private var thoughts: [ThoughtItem] = []
+    @StateObject private var persistenceService = ThoughtPersistenceService.shared
     @State private var showAddThought = false
     @State private var showEditThought = false
     @State private var editingThought: ThoughtItem?
@@ -2410,16 +2424,61 @@ struct AnniversaryDetailView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 24)
                 
-                // 时间线区域 - Apple风格
+                // 时光记录统计卡片
+                VStack(spacing: 16) {
+                    HStack(spacing: 20) {
+                        // 总记录数
+                        VStack(spacing: 4) {
+                            Text("\(persistenceService.getThoughtsStatsForAnniversary(item.id).total)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.blue)
+                            Text("总记录")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        // 今日记录数
+                        VStack(spacing: 4) {
+                            Text("\(persistenceService.getThoughtsStatsForAnniversary(item.id).today)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.green)
+                            Text("今日")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        // 本周记录数
+                        VStack(spacing: 4) {
+                            Text("\(persistenceService.getThoughtsStatsForAnniversary(item.id).thisWeek)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.orange)
+                            Text("本周")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .padding(.bottom, 16)
+                
+                // 调试信息卡片（临时添加，调试完成后可以删除）
+
+                
+                    // 时间线区域 - Apple风格
+    let currentThoughts = persistenceService.getThoughtsForAnniversary(item.id).sorted { $0.createdAt > $1.createdAt }
+                
                 AppleBreathingTimelineView(
-                    thoughts: thoughts,
+                    thoughts: currentThoughts,
                     onEdit: { editingThought in
                         self.editingThought = editingThought
                         showEditThought = true
                     },
                     onDelete: { deletingThought in
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                            thoughts.removeAll { $0.id == deletingThought.id }
+                            persistenceService.deleteThought(deletingThought)
                         }
                     }
                 )
@@ -2451,9 +2510,10 @@ struct AnniversaryDetailView: View {
                         let newThought = ThoughtItem(
                             id: UUID(),
                             content: "✨ 今日抽签：\(encourageText)",
-                            createdAt: Date()
+                            createdAt: Date(),
+                            anniversaryId: item.id
                         )
-                        thoughts.insert(newThought, at: 0)
+                        persistenceService.addThought(newThought)
                         showEncourageCard = false
                     }
                 )
@@ -2470,9 +2530,10 @@ struct AnniversaryDetailView: View {
                     let newThought = ThoughtItem(
                         id: UUID(),
                         content: thoughtText,
-                        createdAt: Date()
+                        createdAt: Date(),
+                        anniversaryId: item.id
                     )
-                    thoughts.insert(newThought, at: 0)
+                    persistenceService.addThought(newThought)
                     showAddThought = false
                 }
             )
@@ -2489,14 +2550,13 @@ struct AnniversaryDetailView: View {
                         self.editingThought = nil
                     },
                     onSave: { updatedContent in
-                        if let index = thoughts.firstIndex(where: { $0.id == editingThought.id }) {
-                            let updatedThought = ThoughtItem(
-                                id: editingThought.id,
-                                content: updatedContent,
-                                createdAt: editingThought.createdAt
-                            )
-                            thoughts[index] = updatedThought
-                        }
+                        let updatedThought = ThoughtItem(
+                            id: editingThought.id,
+                            content: updatedContent,
+                            createdAt: editingThought.createdAt,
+                            anniversaryId: editingThought.anniversaryId
+                        )
+                        persistenceService.updateThought(updatedThought)
                         showEditThought = false
                         self.editingThought = nil
                     }
@@ -2520,9 +2580,406 @@ struct AnniversaryDetailView: View {
 }
 
 // 想法数据模型
-struct ThoughtItem: Identifiable {
+struct ThoughtItem: Identifiable, Codable {
     let id: UUID
     let content: String
     let createdAt: Date
+    let anniversaryId: UUID // 关联的纪念日ID
+}
+
+// MARK: - 纪念日数据持久化服务
+class AnniversaryPersistenceService: ObservableObject {
+    static let shared = AnniversaryPersistenceService()
+    
+    private let userDefaults = UserDefaults.standard
+    private let anniversaryKey = "DaySpark_SavedAnniversaries_v1"
+    
+    @Published var anniversaryItems: [AnniversaryItem] = []
+    
+    private init() {
+        loadAnniversaries()
+    }
+    
+    // 保存纪念日数据
+    func saveAnniversaries() {
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let encoded = try encoder.encode(anniversaryItems)
+            userDefaults.set(encoded, forKey: anniversaryKey)
+            userDefaults.synchronize()
+        } catch {
+            // 保存失败时的处理
+        }
+    }
+    
+    // 加载纪念日数据
+    func loadAnniversaries() {
+        if let data = userDefaults.data(forKey: anniversaryKey),
+           let decoded = try? JSONDecoder().decode([AnniversaryItem].self, from: data) {
+            anniversaryItems = decoded
+        } else {
+            // 使用固定的UUID，确保应用重启后ID保持一致
+            let defaultBirthdayId = UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
+            let defaultNewYearId = UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()
+            
+            anniversaryItems = [
+                AnniversaryItem(id: defaultBirthdayId, event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
+                AnniversaryItem(id: defaultNewYearId, event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
+            ]
+            saveAnniversaries()
+        }
+    }
+    
+    // 添加纪念日
+    func addAnniversary(_ item: AnniversaryItem) {
+        anniversaryItems.append(item)
+        saveAnniversaries()
+    }
+    
+    // 更新纪念日
+    func updateAnniversary(_ item: AnniversaryItem) {
+        if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
+            anniversaryItems[index] = item
+            saveAnniversaries()
+        }
+    }
+    
+    // 删除纪念日
+    func deleteAnniversary(_ item: AnniversaryItem) {
+        anniversaryItems.removeAll { $0.id == item.id }
+        saveAnniversaries()
+    }
+    
+    // 置顶/取消置顶
+    func togglePin(_ item: AnniversaryItem) {
+        if let index = anniversaryItems.firstIndex(where: { $0.id == item.id }) {
+            var updatedItem = anniversaryItems[index]
+            updatedItem.isPinned.toggle()
+            anniversaryItems[index] = updatedItem
+            saveAnniversaries()
+        }
+    }
+}
+
+// MARK: - 本地持久化服务
+class ThoughtPersistenceService: ObservableObject {
+    static let shared = ThoughtPersistenceService()
+    
+    private let userDefaults = UserDefaults.standard
+    private let thoughtsKey = "DaySpark_SavedThoughts_v1" // 使用更独特的键名
+    private let fileManager = FileManager.default
+    
+    @Published var thoughts: [ThoughtItem] = []
+    
+    private init() {
+        loadThoughts()
+        
+        // 监听应用生命周期，确保数据保存
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillTerminate),
+            name: UIApplication.willTerminateNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc private func appWillTerminate() {
+        saveThoughts()
+    }
+    
+    @objc private func appDidEnterBackground() {
+        saveThoughts()
+    }
+    
+    // 保存时光记录到本地
+    func saveThoughts() {
+        // 保存到 UserDefaults
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let encoded = try encoder.encode(thoughts)
+            userDefaults.set(encoded, forKey: thoughtsKey)
+            userDefaults.synchronize() // 强制同步到磁盘
+        } catch {
+            // 保存失败时的处理
+        }
+        
+        // 同时保存到文件系统作为备份
+        saveToFile()
+    }
+    
+    // 验证保存的数据
+    private func verifySavedData() {
+        print("🔍 验证保存的数据...")
+        
+        // 检查 UserDefaults
+        if let data = userDefaults.data(forKey: thoughtsKey) {
+            print("✅ UserDefaults 验证成功，数据大小: \(data.count) 字节")
+            
+            // 尝试解码验证
+            do {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let decoded = try decoder.decode([ThoughtItem].self, from: data)
+                print("✅ 数据解码验证成功，包含 \(decoded.count) 条记录")
+            } catch {
+                print("❌ 数据解码验证失败: \(error)")
+            }
+        } else {
+            print("❌ UserDefaults 验证失败，没有找到数据")
+        }
+        
+        // 检查文件备份
+        if let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let fileURL = documentsPath.appendingPathComponent("thoughts_backup.json")
+            if fileManager.fileExists(atPath: fileURL.path) {
+                let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path)
+                let fileSize = attributes?[.size] as? Int64 ?? 0
+                print("✅ 文件备份验证成功，文件大小: \(fileSize) 字节")
+            } else {
+                print("❌ 文件备份验证失败，备份文件不存在")
+            }
+        }
+    }
+    
+    // 保存到文件系统
+    private func saveToFile() {
+        guard let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let fileURL = documentsPath.appendingPathComponent("thoughts_backup.json")
+        
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            encoder.outputFormatting = .prettyPrinted
+            
+            let data = try encoder.encode(thoughts)
+            try data.write(to: fileURL)
+        } catch {
+            // 文件备份失败时的处理
+        }
+    }
+    
+    // 从本地加载时光记录
+    func loadThoughts() {
+        // 首先尝试从 UserDefaults 加载
+        if let data = userDefaults.data(forKey: thoughtsKey) {
+            do {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let decoded = try decoder.decode([ThoughtItem].self, from: data)
+                thoughts = decoded
+            } catch {
+                // 如果 UserDefaults 失败，尝试从文件恢复
+                loadFromFile()
+            }
+        } else {
+            // 如果 UserDefaults 失败，尝试从文件恢复
+            loadFromFile()
+        }
+    }
+    
+    // 从文件加载时光记录
+    private func loadFromFile() {
+        guard let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let fileURL = documentsPath.appendingPathComponent("thoughts_backup.json")
+        
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            
+            let decodedThoughts = try decoder.decode([ThoughtItem].self, from: data)
+            thoughts = decodedThoughts
+            
+            // 恢复成功后，同步到 UserDefaults
+            if let encoded = try? JSONEncoder().encode(thoughts) {
+                userDefaults.set(encoded, forKey: thoughtsKey)
+                userDefaults.synchronize()
+            }
+        } catch {
+            thoughts = []
+        }
+    }
+    
+    // 添加新的时光记录
+    func addThought(_ thought: ThoughtItem) {
+        thoughts.insert(thought, at: 0)
+        print("添加时光记录: \(thought.content.prefix(20))...")
+        saveThoughts()
+    }
+    
+    // 更新时光记录
+    func updateThought(_ thought: ThoughtItem) {
+        if let index = thoughts.firstIndex(where: { $0.id == thought.id }) {
+            thoughts[index] = thought
+            saveThoughts()
+        }
+    }
+    
+    // 删除时光记录
+    func deleteThought(_ thought: ThoughtItem) {
+        thoughts.removeAll { $0.id == thought.id }
+        saveThoughts()
+    }
+    
+    // 清空所有时光记录
+    func clearAllThoughts() {
+        thoughts.removeAll()
+        saveThoughts()
+    }
+    
+    // 获取指定纪念日的时光记录
+    func getThoughtsForAnniversary(_ anniversaryId: UUID) -> [ThoughtItem] {
+        let filteredThoughts = thoughts.filter { $0.anniversaryId == anniversaryId }
+        return filteredThoughts
+    }
+    
+    // MARK: - 统计功能
+    
+    // 获取时光记录总数
+    var totalThoughtsCount: Int {
+        return thoughts.count
+    }
+    
+    // 获取最近的时光记录
+    var latestThought: ThoughtItem? {
+        return thoughts.first
+    }
+    
+    // 获取今天的时光记录数量
+    var todayThoughtsCount: Int {
+        let today = Calendar.current.startOfDay(for: Date())
+        return thoughts.filter { thought in
+            Calendar.current.isDate(thought.createdAt, inSameDayAs: today)
+        }.count
+    }
+    
+    // 获取本周的时光记录数量
+    var thisWeekThoughtsCount: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+        
+        return thoughts.filter { thought in
+            thought.createdAt >= weekStart
+        }.count
+    }
+    
+    // 获取指定纪念日的统计信息
+    func getThoughtsStatsForAnniversary(_ anniversaryId: UUID) -> (total: Int, today: Int, thisWeek: Int) {
+        let anniversaryThoughts = getThoughtsForAnniversary(anniversaryId)
+        let today = Calendar.current.startOfDay(for: Date())
+        let calendar = Calendar.current
+        let now = Date()
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+        
+        let todayCount = anniversaryThoughts.filter { thought in
+            Calendar.current.isDate(thought.createdAt, inSameDayAs: today)
+        }.count
+        
+        let thisWeekCount = anniversaryThoughts.filter { thought in
+            thought.createdAt >= weekStart
+        }.count
+        
+        return (total: anniversaryThoughts.count, today: todayCount, thisWeek: thisWeekCount)
+    }
+    
+    // 获取指定日期的时光记录
+    func getThoughtsForDate(_ date: Date) -> [ThoughtItem] {
+        let calendar = Calendar.current
+        return thoughts.filter { thought in
+            calendar.isDate(thought.createdAt, inSameDayAs: date)
+        }
+    }
+    
+    // 搜索时光记录
+    func searchThoughts(query: String) -> [ThoughtItem] {
+        if query.isEmpty {
+            return thoughts
+        }
+        return thoughts.filter { thought in
+            thought.content.localizedCaseInsensitiveContains(query)
+        }
+    }
+    
+    // 按时间排序（最新的在前）
+    var sortedThoughts: [ThoughtItem] {
+        return thoughts.sorted { $0.createdAt > $1.createdAt }
+    }
+    
+    // MARK: - 数据管理功能
+    
+    // 导出所有时光记录为JSON
+    func exportThoughtsAsJSON() -> String? {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .prettyPrinted
+        
+        guard let data = try? encoder.encode(thoughts),
+              let jsonString = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+        return jsonString
+    }
+    
+    // 从JSON导入时光记录
+    func importThoughtsFromJSON(_ jsonString: String) -> Bool {
+        guard let data = jsonString.data(using: .utf8) else { return false }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        do {
+            let importedThoughts = try decoder.decode([ThoughtItem].self, from: data)
+            thoughts = importedThoughts
+            saveThoughts()
+            return true
+        } catch {
+            print("导入失败: \(error)")
+            return false
+        }
+    }
+    
+    // 备份时光记录到文件
+    func backupThoughts() -> URL? {
+        guard let jsonString = exportThoughtsAsJSON() else { return nil }
+        
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let backupURL = documentsPath.appendingPathComponent("thoughts_backup_\(Date().timeIntervalSince1970).json")
+        
+        do {
+            try jsonString.write(to: backupURL, atomically: true, encoding: .utf8)
+            return backupURL
+        } catch {
+            print("备份失败: \(error)")
+            return nil
+        }
+    }
+    
+    // 从备份文件恢复时光记录
+    func restoreThoughtsFromBackup(_ backupURL: URL) -> Bool {
+        do {
+            let jsonString = try String(contentsOf: backupURL, encoding: .utf8)
+            return importThoughtsFromJSON(jsonString)
+        } catch {
+            print("恢复失败: \(error)")
+            return false
+        }
+    }
+    
+
+    
 }
 
