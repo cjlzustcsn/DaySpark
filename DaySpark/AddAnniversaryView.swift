@@ -60,13 +60,13 @@ struct AddAnniversaryView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 18, weight: .medium))
-                            Text("取消")
+                            Text("取消".localized)
                                 .font(.system(size: 17, weight: .regular))
                         }
                         .foregroundColor(.primary)
                     }
                     Spacer()
-                    Text(editingItem != nil ? "编辑纪念日" : "添加纪念日")
+                    Text(editingItem != nil ? "编辑纪念日".localized : "添加纪念日".localized)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.primary)
                     Spacer()
@@ -82,7 +82,7 @@ struct AddAnniversaryView: View {
                             }
                         }
                     }) {
-                        Text("保存")
+                        Text("保存".localized)
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : .orange)
                     }
@@ -108,10 +108,10 @@ struct AddAnniversaryView: View {
                                     .frame(width: 24)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("事件名称")
+                                    Text("事件名称".localized)
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundColor(.secondary)
-                                    TextField("请输入事件名称", text: $event)
+                                    TextField("请输入事件名称".localized, text: $event)
                                         .font(.system(size: 17, weight: .regular))
                                         .foregroundColor(.primary)
                                 }
@@ -129,7 +129,7 @@ struct AddAnniversaryView: View {
                                     .frame(width: 24)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("纪念日期")
+                                    Text("纪念日期".localized)
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundColor(.secondary)
                                     DatePicker("", selection: $date, displayedComponents: .date)
@@ -150,7 +150,7 @@ struct AddAnniversaryView: View {
                                         .foregroundColor(.orange)
                                         .frame(width: 24)
                                     
-                                    Text("主题色彩")
+                                    Text("主题色彩".localized)
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -188,7 +188,7 @@ struct AddAnniversaryView: View {
                                         .foregroundColor(.orange)
                                         .frame(width: 24)
                                     
-                                    Text("选择图标")
+                                    Text("选择图标".localized)
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -238,7 +238,7 @@ struct AddAnniversaryView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 18, weight: .semibold))
-                            Text("保存纪念日")
+                            Text("保存纪念日".localized)
                                 .font(.system(size: 17, weight: .semibold))
                         }
                         .foregroundColor(.white)
@@ -260,7 +260,7 @@ struct AddAnniversaryView: View {
                     .disabled(event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .scaleEffect(buttonBreathingScale)
                     
-                    Text("每一天都值得被记录 ✨")
+                    Text("每一天都值得被记录 ✨".localized)
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.secondary)
                 }

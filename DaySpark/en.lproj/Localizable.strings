@@ -1,0 +1,75 @@
+/* 
+  Localizable.strings
+  DaySpark
+  
+  English localization strings (Default Language)
+*/
+
+// Navigation and UI
+"DaySpark" = "DaySpark";
+"返回" = "Back";
+"详情" = "Details";
+"取消" = "Cancel";
+"保存" = "Save";
+"编辑" = "Edit";
+"删除" = "Delete";
+"分享" = "Share";
+
+// Anniversary related
+"置顶" = "Pin";
+"取消" = "Unpin";
+"已经抵达" = "Arrived";
+"还有" = "In";
+"已陪伴" = "Been";
+"天" = "days";
+
+// Add/Edit Anniversary
+"编辑纪念日" = "Edit Anniversary";
+"添加纪念日" = "Add Anniversary";
+"事件名称" = "Event Name";
+"请输入事件名称" = "Enter event name";
+"纪念日期" = "Anniversary Date";
+"主题色彩" = "Theme Color";
+"选择图标" = "Select Icon";
+"保存纪念日" = "Save Anniversary";
+"每一天都值得被记录 ✨" = "Every day is worth recording ✨";
+
+// Time records
+"时光记录" = "Time Records";
+"记录你的想法和感受" = "Record your thoughts and feelings";
+"还没有记录" = "No records yet";
+"点击右上角的 + 按钮，记录下你的想法吧" = "Tap the + button in the top right to record your thoughts";
+"记录想法" = "Record Thoughts";
+"编辑想法" = "Edit Thoughts";
+"写下你的想法" = "Write your thoughts";
+"记录下此刻的感受和想法" = "Record your current feelings and thoughts";
+"编辑你的想法" = "Edit your thoughts";
+"修改下此刻的感受和想法" = "Modify your current feelings and thoughts";
+
+// Actions and dialogs
+"选择操作" = "Choose Action";
+"确认删除" = "Confirm Delete";
+"确定要删除这条记录吗？此操作无法撤销。" = "Are you sure you want to delete this record? This action cannot be undone.";
+
+// Lucky draw
+"抽签" = "Lucky Draw";
+"✨ 今日抽签 ✨" = "✨ Today's Lucky Draw ✨";
+"关闭" = "Close";
+
+// Statistics
+"总记录" = "Total Records";
+"今日" = "Today";
+"本周" = "This Week";
+
+// Encouragement messages
+"你很棒！" = "You're amazing!";
+"再坚持一下，明天会更好！" = "Keep going, tomorrow will be better!";
+"相信自己，你值得被爱。" = "Believe in yourself, you deserve to be loved.";
+"每一天都值得期待。" = "Every day is worth looking forward to.";
+"你的努力终将被看到。" = "Your efforts will eventually be seen.";
+"温柔以待自己。" = "Be gentle with yourself.";
+"别怕，阳光总在风雨后。" = "Don't be afraid, sunshine always comes after the storm.";
+
+// Default anniversary items
+"生日" = "Birthday";
+"元旦" = "New Year";
