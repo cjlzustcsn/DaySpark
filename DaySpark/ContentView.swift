@@ -165,6 +165,18 @@ struct MainContentView: View {
     let onPin: (AnniversaryItem) -> Void
     let onTap: (AnniversaryItem) -> Void
     
+    // 排序后的纪念日列表：置顶的在前，然后按日期排序
+    private var sortedAnniversaryItems: [AnniversaryItem] {
+        return anniversaryItems.sorted { item1, item2 in
+            // 首先按置顶状态排序（置顶的在前）
+            if item1.isPinned != item2.isPinned {
+                return item1.isPinned
+            }
+            // 然后按日期排序（未来的在前）
+            return item1.date < item2.date
+        }
+    }
+    
     var body: some View {
         ZStack {
             Color(.systemBackground)
@@ -172,7 +184,7 @@ struct MainContentView: View {
                 .shadow(color: Color(red: 1.0, green: 0.898, blue: 0.705, opacity: 0.10), radius: 8, x: 0, y: -4)
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: cardSpacing) {
-                    ForEach(anniversaryItems) { item in
+                    ForEach(sortedAnniversaryItems) { item in
                         AnniversaryCardView(
                             item: item,
                             onEdit: { onEdit(item) },
@@ -1215,6 +1227,18 @@ struct AppleBreathingContentView: View {
     @State private var draggedItemId: UUID? = nil
     @State private var dropTargetId: UUID? = nil
     
+    // 排序后的纪念日列表：置顶的在前，然后按日期排序
+    private var sortedAnniversaryItems: [AnniversaryItem] {
+        return anniversaryItems.sorted { item1, item2 in
+            // 首先按置顶状态排序（置顶的在前）
+            if item1.isPinned != item2.isPinned {
+                return item1.isPinned
+            }
+            // 然后按日期排序（未来的在前）
+            return item1.date < item2.date
+        }
+    }
+    
     var body: some View {
         ZStack {
             Color(.systemBackground)
@@ -1231,7 +1255,7 @@ struct AppleBreathingContentView: View {
             
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 20) {
-                    ForEach(anniversaryItems) { item in
+                    ForEach(sortedAnniversaryItems) { item in
                         AppleBreathingAnniversaryCard(
                             item: item,
                             isExpanded: expandedItemId == item.id,
