@@ -79,7 +79,7 @@ struct HeaderView: View {
     
     var body: some View {
         HStack {
-            Text("DaySpark".localized)
+            Text("DaySpark")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
@@ -357,7 +357,7 @@ struct EncourageCardView: View {
                 Button(action: {}) {
                     HStack {
                         Image(systemName: "square.and.arrow.up")
-                        Text("分享".localized)
+                        Text("分享")
                     }
                     .font(.title3)
                     .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
@@ -367,7 +367,7 @@ struct EncourageCardView: View {
                 Button(action: { onSave?() }) {
                     HStack {
                         Image(systemName: "square.and.arrow.down")
-                        Text("保存".localized)
+                        Text("保存")
                     }
                     .font(.title3)
                     .foregroundColor(Color(red: 0.8, green: 0.5, blue: 0.2))
@@ -922,7 +922,7 @@ struct AnniversaryCardView: View {
                             Image(systemName: item.isPinned ? "pin.slash" : "pin")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(.white)
-                            Text(item.isPinned ? "取消".localized : "置顶".localized)
+                            Text(item.isPinned ? "取消" : "置顶")
                                 .font(.caption)
                                 .foregroundColor(.white)
                         }
@@ -941,7 +941,7 @@ struct AnniversaryCardView: View {
                             Image(systemName: "pencil")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(.white)
-                            Text("编辑".localized)
+                            Text("编辑")
                                 .font(.caption)
                                 .foregroundColor(.white)
                         }
@@ -959,7 +959,7 @@ struct AnniversaryCardView: View {
                             Image(systemName: "trash")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(.white)
-                            Text("删除".localized)
+                            Text("删除")
                                 .font(.caption)
                                 .foregroundColor(.white)
                         }
@@ -1099,7 +1099,7 @@ struct AnniversaryItemView: View {
                         .font(.headline)
                         .foregroundColor(isPinned ? Color.blue : Color(red: 0.8, green: 0.5, blue: 0.2))
                     if isPinned {
-                        Text("置顶".localized)
+                        Text("置顶")
                             .font(.caption2)
                             .foregroundColor(.blue)
                             .padding(.horizontal, 6)
@@ -1123,23 +1123,23 @@ struct AnniversaryItemView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .trailing, spacing: 4) {
                 if daysLeft == 0 {
-                    Text("已经抵达".localized)
+                    Text("已经抵达")
                         .font(.title3)
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 1.0, green: 0.7, blue: 0.2))
                 } else if isFuture {
-                    Text("还有".localized)
+                    Text("还有")
                         .font(.caption)
                         .foregroundColor(.gray)
-                    Text("\(abs(daysLeft))" + "天".localized)
+                    Text("\(abs(daysLeft))天")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.3))
                 } else {
-                    Text("已陪伴".localized)
+                    Text("已陪伴")
                         .font(.caption)
                         .foregroundColor(.gray)
-                    Text("\(abs(daysLeft))" + "天".localized)
+                    Text("\(abs(daysLeft))天")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.4))
@@ -1411,7 +1411,7 @@ struct AppleBreathingAnniversaryCard: View {
                     // 置顶/取消置顶按钮
                     AppleBreathingActionButton(
                         icon: item.isPinned ? "pin.slash" : "pin",
-                        title: item.isPinned ? "取消" : "置顶",
+                        title: item.isPinned ? "取消".localized : "置顶".localized,
                         color: item.isPinned ? Color.gray : Color.blue,
                         action: onPin
                     )
@@ -1480,7 +1480,7 @@ struct AppleBreathingAnniversaryCard: View {
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Text("\(abs(daysLeft))" + "天".localized)
+                            Text("\(abs(daysLeft))天")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(isFuture ? Color.orange : Color.green)
                         }
@@ -1586,7 +1586,7 @@ struct AppleBreathingDetailHeaderView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .medium))
-                    Text("返回".localized)
+                    Text("返回")
                         .font(.system(size: 17, weight: .regular))
                 }
                 .foregroundColor(.primary)
@@ -1595,7 +1595,7 @@ struct AppleBreathingDetailHeaderView: View {
             .opacity(breathingOpacity)
             
             Spacer()
-            Text("详情".localized)
+            Text("详情")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(.primary)
             Spacer()
@@ -1650,10 +1650,10 @@ struct AppleBreathingTimelineView: View {
             // 时间线标题栏
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("时光记录".localized)
+                    Text("时光记录")
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.primary)
-                    Text("记录你的想法和感受".localized)
+                    Text("记录你的想法和感受")
                         .font(.system(size: 15, weight: .regular))
                         .foregroundColor(.secondary)
                 }
@@ -1784,29 +1784,29 @@ struct AppleBreathingThoughtItemView: View {
         .onAppear {
             startAppleBreathing()
         }
-        .confirmationDialog("选择操作".localized, isPresented: $showActionSheet, titleVisibility: .hidden) {
+        .confirmationDialog("选择操作", isPresented: $showActionSheet, titleVisibility: .hidden) {
             Button(action: { onEdit(thought) }) {
                 HStack {
                     Image(systemName: "pencil")
                         .font(.system(size: 16, weight: .medium))
-                    Text("编辑".localized)
+                    Text("编辑")
                         .font(.system(size: 16, weight: .regular))
                 }
             }
             
-            Button("删除".localized, role: .destructive) {
+            Button("删除", role: .destructive) {
                 showDeleteAlert = true
             }
             
-            Button("取消".localized, role: .cancel) { }
+            Button("取消", role: .cancel) { }
         }
-        .alert("确认删除".localized, isPresented: $showDeleteAlert) {
-            Button("删除".localized, role: .destructive) {
+        .alert("确认删除", isPresented: $showDeleteAlert) {
+            Button("删除", role: .destructive) {
                 onDelete(thought)
             }
-            Button("取消".localized, role: .cancel) { }
+            Button("取消", role: .cancel) { }
         } message: {
-            Text("确定要删除这条记录吗？此操作无法撤销。".localized)
+            Text("确定要删除这条记录吗？此操作无法撤销。")
         }
     }
     
@@ -1841,10 +1841,10 @@ struct AppleBreathingEmptyStateView: View {
             .opacity(breathingOpacity)
             
             VStack(spacing: 8) {
-                Text("还没有记录".localized)
+                Text("还没有记录")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.primary)
-                Text("点击右上角的 + 按钮，记录下你的想法吧".localized)
+                Text("点击右上角的 + 按钮，记录下你的想法吧")
                     .font(.system(size: 15, weight: .regular))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -1939,7 +1939,7 @@ struct AppleBreathingEncourageCard: View {
                 }
             
             VStack(spacing: 24) {
-                Text("✨ 今日抽签 ✨".localized)
+                Text("✨ 今日抽签 ✨")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.primary)
                 
@@ -1951,7 +1951,7 @@ struct AppleBreathingEncourageCard: View {
                 
                 HStack(spacing: 16) {
                     Button(action: dismissCard) {
-                        Text("关闭".localized)
+                        Text("关闭")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 24)
@@ -1966,7 +1966,7 @@ struct AppleBreathingEncourageCard: View {
                         onSave()
                         dismissCard()
                     }) {
-                        Text("保存".localized)
+                        Text("保存")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
@@ -2049,7 +2049,7 @@ struct AppleBreathingAddThoughtView: View {
                         .foregroundColor(.primary)
                     }
                     Spacer()
-                    Text("记录想法".localized)
+                    Text("记录想法")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.primary)
                     Spacer()
@@ -2058,7 +2058,7 @@ struct AppleBreathingAddThoughtView: View {
                             onSave(thoughtText)
                         }
                     }) {
-                        Text("保存".localized)
+                        Text("保存")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : .orange)
                     }
@@ -2075,10 +2075,10 @@ struct AppleBreathingAddThoughtView: View {
                 // 输入区域
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("写下你的想法".localized)
+                        Text("写下你的想法")
                             .font(.system(size: 20, weight: .bold))
                             .foregroundColor(.primary)
-                        Text("记录下此刻的感受和想法".localized)
+                        Text("记录下此刻的感受和想法")
                             .font(.system(size: 15, weight: .regular))
                             .foregroundColor(.secondary)
                     }
@@ -2148,7 +2148,7 @@ struct AppleBreathingEditThoughtView: View {
                         .foregroundColor(.primary)
                     }
                     Spacer()
-                    Text("编辑想法".localized)
+                    Text("编辑想法")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.primary)
                     Spacer()
@@ -2157,7 +2157,7 @@ struct AppleBreathingEditThoughtView: View {
                             onSave(thoughtText)
                         }
                     }) {
-                        Text("保存".localized)
+                        Text("保存")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(thoughtText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : .orange)
                     }
@@ -2174,10 +2174,10 @@ struct AppleBreathingEditThoughtView: View {
                 // 输入区域
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("编辑你的想法".localized)
+                        Text("编辑你的想法")
                             .font(.system(size: 20, weight: .bold))
                             .foregroundColor(.primary)
-                        Text("修改下此刻的感受和想法".localized)
+                        Text("修改下此刻的感受和想法")
                             .font(.system(size: 15, weight: .regular))
                             .foregroundColor(.secondary)
                     }
@@ -2275,11 +2275,11 @@ struct AppleBreathingDetailCardView: View {
                         .modifier(AppleBreathingProgressModifier(color: isFuture ? Color.orange : Color.green))
                     
                     HStack {
-                        Text(isFuture ? "还有".localized : "已陪伴".localized)
+                        Text(isFuture ? "还有" : "已陪伴")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text("\(abs(daysLeft))" + "天".localized)
+                        Text("\(abs(daysLeft))天")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(isFuture ? Color.orange : Color.green)
                     }
@@ -2433,7 +2433,7 @@ struct AnniversaryDetailView: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.blue)
-                            Text("总记录".localized)
+                            Text("总记录")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -2444,7 +2444,7 @@ struct AnniversaryDetailView: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.green)
-                            Text("今日".localized)
+                            Text("今日")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -2455,7 +2455,7 @@ struct AnniversaryDetailView: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.orange)
-                            Text("本周".localized)
+                            Text("本周")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -2491,7 +2491,7 @@ struct AnniversaryDetailView: View {
                     if !isAnimatingButton && !showEncourageCard {
                         isAnimatingButton = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            encourageText = encourages.randomElement() ?? "你很棒！".localized
+                            encourageText = encourages.randomElement() ?? "你很棒！"
                             showEncourageCard = true
                             isAnimatingButton = false
                         }
@@ -2509,7 +2509,7 @@ struct AnniversaryDetailView: View {
                     onSave: {
                         let newThought = ThoughtItem(
                             id: UUID(),
-                            content: "✨ 今日抽签：\(encourageText)".localized,
+                            content: "✨ 今日抽签：\(encourageText)",
                             createdAt: Date(),
                             anniversaryId: item.id
                         )
@@ -2694,8 +2694,8 @@ class AnniversaryPersistenceService: ObservableObject {
         let defaultNewYearId = UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()
         
         anniversaryItems = [
-            AnniversaryItem(id: defaultBirthdayId, event: "生日".localized, date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
-            AnniversaryItem(id: defaultNewYearId, event: "元旦".localized, date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
+            AnniversaryItem(id: defaultBirthdayId, event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
+            AnniversaryItem(id: defaultNewYearId, event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
         ]
         saveAnniversaries()
     }
