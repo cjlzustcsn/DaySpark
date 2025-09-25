@@ -1527,6 +1527,13 @@ struct AppleBreathingAnniversaryCard: View {
                         // 仅在结束时根据阈值切换展开状态，由 onChange 动画到目标位置
                         let shouldExpand = value.translation.width < -90
                         onExpandChange(shouldExpand)
+                        
+                        // 如果滑动距离不足阈值，添加回弹动画
+                        if !shouldExpand {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                offset = 0
+                            }
+                        }
                     }
             )
             .onTapGesture {
