@@ -1517,27 +1517,16 @@ struct AppleBreathingAnniversaryCard: View {
                 DragGesture()
                     .onChanged { value in
                         if value.translation.width < 0 {
-                            // 限制最大滑动距离，让动效更自然
-                            let maxOffset: CGFloat = -200
+                            // 限制最大滑动距离，让动效更自然（与三个60pt操作按钮总宽度一致）
+                            let maxOffset: CGFloat = -180
+                            // 仅根据手指位置更新偏移，不在拖动中切换展开状态，避免闪跳
                             offset = max(value.translation.width, maxOffset)
-                            let shouldExpand = value.translation.width < -30
-                            if shouldExpand != isExpanded {
-                                onExpandChange(shouldExpand)
-                            }
                         }
                     }
                     .onEnded { value in
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                            if value.translation.width < -80 {
-                                // 完全展开
-                                offset = -200
-                                onExpandChange(true)
-                            } else {
-                                // 回弹到原位
-                                offset = 0
-                                onExpandChange(false)
-                            }
-                        }
+                        // 仅在结束时根据阈值切换展开状态，由 onChange 动画到目标位置
+                        let shouldExpand = value.translation.width < -90
+                        onExpandChange(shouldExpand)
                     }
             )
             .onTapGesture {
@@ -1546,9 +1535,9 @@ struct AppleBreathingAnniversaryCard: View {
                 }
             }
             .onChange(of: isExpanded) { newValue in
-                // 同步offset状态
+                // 同步offset状态（与按钮宽度一致）
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    offset = newValue ? -200 : 0
+                    offset = newValue ? -180 : 0
                 }
             }
             // 拖拽状态视觉反馈
