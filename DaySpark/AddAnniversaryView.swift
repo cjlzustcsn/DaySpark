@@ -60,7 +60,7 @@ struct AddAnniversaryView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 18, weight: .medium))
-                            Text("取消".localized)
+                            Text("返回".localized)
                                 .font(.system(size: 17, weight: .regular))
                         }
                         .foregroundColor(.primary)
