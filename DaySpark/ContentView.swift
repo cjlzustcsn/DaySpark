@@ -1277,26 +1277,29 @@ struct AppleBreathingContentView: View {
                             insertion: .scale.combined(with: .opacity),
                             removal: .scale.combined(with: .opacity)
                         ))
-                        .onDrag {
-                            // 开始拖拽时退出展开状态
-                            if expandedItemId != nil {
-                                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                    expandedItemId = nil
-                                }
-                            }
-                            // 设置拖拽状态
-                            draggedItemId = item.id
-                            return NSItemProvider(object: item.id.uuidString as NSString)
-                        }
-                        .onLongPressGesture(minimumDuration: 0.5) {
-                            // 长按手势，触发拖拽
-                        }
-                        .onDrop(of: [.text], delegate: SimpleDropDelegate(
-                            item: item,
-                            items: $anniversaryItems,
-                            draggedItemId: $draggedItemId,
-                            dropTargetId: $dropTargetId
-                        ))
+                        // 拖拽功能已禁用
+                        // .onDrag {
+                        //     // 开始拖拽时退出展开状态
+                        //     if expandedItemId != nil {
+                        //         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        //             expandedItemId = nil
+                        //         }
+                        //     }
+                        //     // 设置拖拽状态
+                        //     draggedItemId = item.id
+                        //     return NSItemProvider(object: item.id.uuidString as NSString)
+                        // }
+                        // 长按功能已禁用
+                        // .onLongPressGesture(minimumDuration: 0.5) {
+                        //     // 长按手势，触发拖拽
+                        // }
+                        // 拖拽排序功能已禁用
+                        // .onDrop(of: [.text], delegate: SimpleDropDelegate(
+                        //     item: item,
+                        //     items: $anniversaryItems,
+                        //     draggedItemId: $draggedItemId,
+                        //     dropTargetId: $dropTargetId
+                        // ))
                     }
                 }
                 .padding(.top, 24)
