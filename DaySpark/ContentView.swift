@@ -2066,7 +2066,7 @@ struct AppleBreathingAddThoughtView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 18, weight: .medium))
-                            Text("取消")
+                            Text("返回")
                                 .font(.system(size: 17, weight: .regular))
                         }
                         .foregroundColor(.primary)
