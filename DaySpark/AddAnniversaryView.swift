@@ -289,7 +289,7 @@ struct AddAnniversaryView: View {
                     .disabled(event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .scaleEffect(buttonBreathingScale)
                     
-                    Text("每一天都值得被记录 ✨".localized)
+                    Text("每一天都值得被记录".localized)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                         .opacity(0.8)
