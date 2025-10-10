@@ -98,122 +98,149 @@ struct AddAnniversaryView: View {
                 
                 // 表单区域
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 20) {
                         // 事件输入卡片
                         AppleBreathingCard {
-                            HStack(spacing: 16) {
-                                Image(systemName: "textformat")
-                                    .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(.orange)
-                                    .frame(width: 24)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("事件名称".localized)
-                                        .font(.system(size: 15, weight: .medium))
-                                        .foregroundColor(.secondary)
-                                    TextField("请输入事件名称".localized, text: $event)
-                                        .font(.system(size: 17, weight: .regular))
-                                        .foregroundColor(.primary)
+                            VStack(spacing: 0) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "textformat")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(selectedColor)
+                                        .frame(width: 20, height: 20)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("事件名称".localized)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.secondary)
+                                            .textCase(.uppercase)
+                                        TextField("请输入事件名称".localized, text: $event)
+                                            .font(.system(size: 16, weight: .regular))
+                                            .foregroundColor(.primary)
+                                    }
+                                    Spacer()
                                 }
-                                Spacer()
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+                                .padding(.bottom, 12)
                             }
-                            .padding(20)
                         }
                         
                         // 日期选择卡片
                         AppleBreathingCard {
-                            HStack(spacing: 16) {
-                                Image(systemName: "calendar")
-                                    .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(.orange)
-                                    .frame(width: 24)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("纪念日期".localized)
-                                        .font(.system(size: 15, weight: .medium))
-                                        .foregroundColor(.secondary)
-                                    DatePicker("", selection: $date, displayedComponents: .date)
-                                        .labelsHidden()
-                                        .font(.system(size: 17, weight: .regular))
+                            VStack(spacing: 0) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "calendar")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(selectedColor)
+                                        .frame(width: 20, height: 20)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("纪念日期".localized)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.secondary)
+                                            .textCase(.uppercase)
+                                        DatePicker("", selection: $date, displayedComponents: .date)
+                                            .labelsHidden()
+                                            .font(.system(size: 16, weight: .regular))
+                                    }
+                                    Spacer()
                                 }
-                                Spacer()
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+                                .padding(.bottom, 12)
                             }
-                            .padding(20)
                         }
                         
                         // 主题色选择卡片
                         AppleBreathingCard {
-                            VStack(alignment: .leading, spacing: 16) {
-                                HStack(spacing: 16) {
+                            VStack(spacing: 0) {
+                                HStack(spacing: 12) {
                                     Image(systemName: "paintpalette")
-                                        .font(.system(size: 20, weight: .medium))
-                                        .foregroundColor(.orange)
-                                        .frame(width: 24)
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(selectedColor)
+                                        .frame(width: 20, height: 20)
                                     
                                     Text("主题色彩".localized)
-                                        .font(.system(size: 15, weight: .medium))
+                                        .font(.system(size: 13, weight: .medium))
                                         .foregroundColor(.secondary)
+                                        .textCase(.uppercase)
                                     Spacer()
                                 }
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+                                .padding(.bottom, 12)
                                 
-                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
                                     ForEach(colors, id: \.self) { color in
                                         Circle()
                                             .fill(color)
-                                            .frame(width: 44, height: 44)
+                                            .frame(width: 36, height: 36)
                                             .overlay(
                                                 Circle()
-                                                    .stroke(Color.white, lineWidth: 3)
-                                                    .opacity(selectedColor == color ? 1 : 0)
+                                                    .stroke(Color.white, lineWidth: selectedColor == color ? 3 : 0)
                                             )
-                                            .scaleEffect(selectedColor == color ? 1.1 : 1.0)
-                                            .shadow(color: selectedColor == color ? color.opacity(0.3) : Color.clear, radius: 6, x: 0, y: 3)
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(selectedColor == color ? Color.primary.opacity(0.2) : Color.clear, lineWidth: 2)
+                                            )
+                                            .scaleEffect(selectedColor == color ? 1.05 : 1.0)
+                                            .shadow(color: selectedColor == color ? color.opacity(0.25) : Color.clear, radius: 4, x: 0, y: 2)
                                             .onTapGesture {
-                                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                                     selectedColor = color
                                                 }
                                             }
                                     }
                                 }
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 16)
                             }
-                            .padding(20)
                         }
                         
                         // 图标选择卡片
                         AppleBreathingCard {
-                            VStack(alignment: .leading, spacing: 16) {
-                                HStack(spacing: 16) {
+                            VStack(spacing: 0) {
+                                HStack(spacing: 12) {
                                     Image(systemName: "face.smiling")
-                                        .font(.system(size: 20, weight: .medium))
-                                        .foregroundColor(.orange)
-                                        .frame(width: 24)
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(selectedColor)
+                                        .frame(width: 20, height: 20)
                                     
                                     Text("选择图标".localized)
-                                        .font(.system(size: 15, weight: .medium))
+                                        .font(.system(size: 13, weight: .medium))
                                         .foregroundColor(.secondary)
+                                        .textCase(.uppercase)
                                     Spacer()
                                 }
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+                                .padding(.bottom, 12)
                                 
-                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
                                     ForEach(icons, id: \.self) { icon in
                                         Text(icon)
-                                            .font(.system(size: 24))
-                                            .frame(width: 44, height: 44)
+                                            .font(.system(size: 20))
+                                            .frame(width: 36, height: 36)
                                             .background(
                                                 Circle()
-                                                    .fill(selectedIcon == icon ? Color.orange.opacity(0.15) : Color.clear)
+                                                    .fill(selectedIcon == icon ? selectedColor.opacity(0.12) : Color.clear)
                                             )
-                                            .scaleEffect(selectedIcon == icon ? 1.1 : 1.0)
-                                            .shadow(color: selectedIcon == icon ? Color.orange.opacity(0.2) : Color.clear, radius: 4, x: 0, y: 2)
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(selectedIcon == icon ? selectedColor.opacity(0.3) : Color.clear, lineWidth: 1.5)
+                                            )
+                                            .scaleEffect(selectedIcon == icon ? 1.05 : 1.0)
+                                            .shadow(color: selectedIcon == icon ? selectedColor.opacity(0.15) : Color.clear, radius: 3, x: 0, y: 1)
                                             .onTapGesture {
-                                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                                     selectedIcon = icon
                                                 }
                                             }
                                     }
                                 }
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 16)
                             }
-                            .padding(20)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -222,7 +249,7 @@ struct AddAnniversaryView: View {
                 }
                 
                 // 保存按钮 - 悬浮在底部
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     Button(action: {
                         if !event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             if let onSave = onSave {
@@ -236,35 +263,39 @@ struct AddAnniversaryView: View {
                         }
                     }) {
                         HStack(spacing: 8) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 18, weight: .semibold))
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 16, weight: .semibold))
                             Text("保存纪念日".localized)
-                                .font(.system(size: 17, weight: .semibold))
+                                .font(.system(size: 16, weight: .semibold))
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 50)
+                        .frame(height: 48)
                         .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.orange,
-                                    event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray.opacity(0.8) : Color.orange.opacity(0.8)
-                                ]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(
+                                    event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 
+                                    Color.gray : 
+                                    selectedColor
+                                )
                         )
-                        .cornerRadius(25)
-                        .shadow(color: event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.orange.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .shadow(
+                            color: event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 
+                            Color.clear : 
+                            selectedColor.opacity(0.25), 
+                            radius: 6, x: 0, y: 3
+                        )
                     }
                     .disabled(event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .scaleEffect(buttonBreathingScale)
                     
                     Text("每一天都值得被记录 ✨".localized)
-                        .font(.system(size: 13, weight: .regular))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
+                        .opacity(0.8)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
                 .padding(.bottom, 34)
                 .background(
                     Rectangle()
@@ -313,18 +344,22 @@ struct AppleBreathingCard<Content: View>: View {
     let content: () -> Content
     @State private var breathingScale: CGFloat = 1.0
     @State private var breathingOpacity: Double = 1.0
-    @State private var shadowRadius: CGFloat = 8
+    @State private var shadowRadius: CGFloat = 6
     
     var body: some View {
         content()
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.regularMaterial)
                     .shadow(
-                        color: Color.black.opacity(0.08),
+                        color: Color.black.opacity(0.06),
                         radius: shadowRadius,
                         x: 0,
-                        y: 4
+                        y: 2
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.primary.opacity(0.04), lineWidth: 0.5)
                     )
             )
             .scaleEffect(breathingScale)
@@ -336,12 +371,12 @@ struct AppleBreathingCard<Content: View>: View {
     
     private func startAppleBreathing() {
         withAnimation(
-            Animation.easeInOut(duration: 5.0)
+            Animation.easeInOut(duration: 4.0)
                 .repeatForever(autoreverses: true)
         ) {
-            breathingScale = 1.01
-            breathingOpacity = 0.98
-            shadowRadius = 10
+            breathingScale = 1.005
+            breathingOpacity = 0.99
+            shadowRadius = 8
         }
     }
 }
