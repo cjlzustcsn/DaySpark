@@ -7,17 +7,17 @@
 
 import SwiftUI
 
-// AnniversaryItem 数据结构
+// AnniversaryItem data structure
 struct AnniversaryItem: Identifiable, Codable {
     let id: UUID
     let event: String
     let date: Date
     let color: Color
     let icon: String
-    let createdAt: Date // 添加创建时间
-    var isPinned: Bool = false // 添加置顶状态
+    let createdAt: Date // Creation time
+    var isPinned: Bool = false // Pin status
     
-    // 为 Color 添加编码支持
+    // Add encoding support for Color
     enum CodingKeys: String, CodingKey {
         case id, event, date, icon, createdAt, isPinned
         case colorRed, colorGreen, colorBlue
@@ -57,13 +57,13 @@ struct AnniversaryItem: Identifiable, Codable {
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(isPinned, forKey: .isPinned)
         
-        // 将 Color 转换为 RGB 值
+        // Convert Color to RGB values
         if let components = color.cgColor?.components {
             try container.encode(components[0], forKey: .colorRed)
             try container.encode(components[1], forKey: .colorGreen)
             try container.encode(components[2], forKey: .colorBlue)
         } else {
-            // 默认值
+            // Default values
             try container.encode(0.5, forKey: .colorRed)
             try container.encode(0.5, forKey: .colorGreen)
             try container.encode(0.5, forKey: .colorBlue)
@@ -71,7 +71,7 @@ struct AnniversaryItem: Identifiable, Codable {
     }
 }
 
-// HeaderView 组件
+// HeaderView component
 struct HeaderView: View {
     let mainGradient: LinearGradient
     let buttonGradient: LinearGradient
@@ -103,10 +103,10 @@ struct HeaderView: View {
         .frame(height: 56)
         .background(
             ZStack {
-                // 主渐变背景
+                // Main gradient background
                 mainGradient
                 
-                // 顶部柔和阴影
+                // Top soft shadow
                 VStack {
                     Rectangle()
                         .fill(
@@ -123,7 +123,7 @@ struct HeaderView: View {
                     Spacer()
                 }
                 
-                // 底部柔和阴影
+                // Bottom soft shadow
                 VStack {
                     Spacer()
                     Rectangle()
@@ -153,7 +153,7 @@ struct HeaderView: View {
     }
 }
 
-// MainContentView 组件
+// MainContentView component
 struct MainContentView: View {
     let anniversaryItems: [AnniversaryItem]
     let cardSpacing: CGFloat
@@ -165,14 +165,14 @@ struct MainContentView: View {
     let onPin: (AnniversaryItem) -> Void
     let onTap: (AnniversaryItem) -> Void
     
-    // 排序后的纪念日列表：置顶的在前，然后按日期排序
+    // Sorted anniversary list: pinned items first, then sorted by date
     private var sortedAnniversaryItems: [AnniversaryItem] {
         return anniversaryItems.sorted { item1, item2 in
-            // 首先按置顶状态排序（置顶的在前）
+            // First sort by pin status (pinned items first)
             if item1.isPinned != item2.isPinned {
                 return item1.isPinned
             }
-            // 然后按日期排序（未来的在前）
+            // Then sort by date (future dates first)
             return item1.date < item2.date
         }
     }
@@ -206,7 +206,7 @@ struct MainContentView: View {
     }
 }
 
-// FloatingButtonView 组件
+// FloatingButtonView component
 struct FloatingButtonView: View {
     let buttonGradient: LinearGradient
     let floatingButtonSize: CGFloat
@@ -240,13 +240,13 @@ struct FloatingButtonView: View {
                 .buttonStyle(PlainButtonStyle())
                 .padding(.trailing, floatingButtonPadding)
                 .padding(.bottom, 32)
-                .accessibilityLabel("抽签")
+                .accessibilityLabel("Lucky Draw")
             }
         }
     }
 }
 
-// EncourageCardView 组件
+// EncourageCardView component
 struct EncourageCardView: View {
     let encourageText: String
     let cardAnim: Bool
@@ -276,9 +276,9 @@ struct EncourageCardView: View {
             }
         VStack {
             Spacer()
-            // 卡片本体动效
+            // Card body animation
             ZStack {
-                // 光晕扩散
+                // Glow diffusion
                 Circle()
                     .fill(
                         RadialGradient(gradient: Gradient(colors: [Color(red: 1.0, green: 0.95, blue: 0.7, opacity: 0.7), Color.clear]), center: .center, startRadius: 0, endRadius: 320)
@@ -288,9 +288,9 @@ struct EncourageCardView: View {
                     .opacity(cardGlow ? 0.8 : 0)
                     .blur(radius: 24)
                     .animation(.easeOut(duration: 0.7), value: cardGlow)
-                // 裱起来的画框卡片
+                // Framed card
                 ZStack {
-                    // 外层金色描边
+                    // Outer golden border
                     RoundedRectangle(cornerRadius: 40, style: .continuous)
                         .stroke(
                             LinearGradient(
@@ -305,7 +305,7 @@ struct EncourageCardView: View {
                         )
                         .shadow(color: Color.yellow.opacity(0.18), radius: 8, x: 0, y: 4)
                         .frame(width: 240, height: 180)
-                    // 内层卡片本体
+                    // Inner card body
                     RoundedRectangle(cornerRadius: 32, style: .continuous)
                         .fill(
                             LinearGradient(
@@ -320,7 +320,7 @@ struct EncourageCardView: View {
                         .shadow(color: Color(red: 0.9, green: 0.8, blue: 0.5, opacity: 0.18), radius: 24, x: 0, y: 12)
                         .frame(width: 240, height: 180)
                         .overlay(
-                            // 四角装饰
+                            // Corner decorations
                             ZStack {
                                 ForEach(0..<4) { i in
                                     Image(systemName: "leaf.fill")
@@ -332,7 +332,7 @@ struct EncourageCardView: View {
                                 }
                             }
                         )
-                    // 卡片内容
+                    // Card content
                     VStack(spacing: 8) {
                         Text("\u{201C}")
                             .font(.system(size: 20, weight: .bold, design: .serif))
@@ -364,7 +364,7 @@ struct EncourageCardView: View {
                 .opacity(cardAnim ? 1 : 0)
                 .animation(.interpolatingSpring(stiffness: 180, damping: 16), value: cardAnim)
             }
-            // 按钮只做opacity淡出
+            // Button fade out with opacity only
             HStack(spacing: 28) {
                 Button(action: {}) {
                     HStack {
@@ -1227,14 +1227,14 @@ struct AppleBreathingContentView: View {
     @State private var draggedItemId: UUID? = nil
     @State private var dropTargetId: UUID? = nil
     
-    // 排序后的纪念日列表：置顶的在前，然后按日期排序
+    // Sorted anniversary list: pinned items first, then sorted by date
     private var sortedAnniversaryItems: [AnniversaryItem] {
         return anniversaryItems.sorted { item1, item2 in
-            // 首先按置顶状态排序（置顶的在前）
+            // First sort by pin status (pinned items first)
             if item1.isPinned != item2.isPinned {
                 return item1.isPinned
             }
-            // 然后按日期排序（未来的在前）
+            // Then sort by date (future dates first)
             return item1.date < item2.date
         }
     }
@@ -1923,7 +1923,7 @@ struct AppleBreathingFloatingButton: View {
                 .buttonStyle(PlainButtonStyle())
                 .padding(.trailing, 20)
                 .padding(.bottom, 30)
-                .accessibilityLabel("抽签")
+                .accessibilityLabel("Lucky Draw")
             }
         }
         .onAppear {
@@ -2406,15 +2406,15 @@ struct AnniversaryDetailView: View {
     @State private var contentBreathingPhase: CGFloat = 0
     @State private var floatingLights: [FloatingLight] = []
     
-    // 鼓励语
+    // Encouragement messages
     let encourages = [
-        "你很棒！",
-        "再坚持一下，明天会更好！",
-        "相信自己，你值得被爱。",
-        "每一天都值得期待。",
-        "你的努力终将被看到。",
-        "温柔以待自己。",
-        "别怕，阳光总在风雨后。"
+        "You're amazing!",
+        "Keep going, tomorrow will be better!",
+        "Believe in yourself, you deserve to be loved.",
+        "Every day is worth looking forward to.",
+        "Your efforts will be seen.",
+        "Be gentle with yourself.",
+        "Don't worry, sunshine comes after the storm."
     ]
     
     var body: some View {
@@ -2652,7 +2652,7 @@ class AnniversaryPersistenceService: ObservableObject {
     
     // 保存纪念日数据
     func saveAnniversaries() {
-        print("💾 开始保存纪念日数据，当前有 \(anniversaryItems.count) 条记录...")
+        print("💾 Starting to save anniversary data, current count: \(anniversaryItems.count)")
         
         do {
             let encoder = JSONEncoder()
@@ -2661,73 +2661,71 @@ class AnniversaryPersistenceService: ObservableObject {
             userDefaults.set(encoded, forKey: anniversaryKey)
             userDefaults.synchronize() // 强制同步到磁盘
             
-            print("✅ 纪念日数据保存成功，键名: \(anniversaryKey)")
+            print("✅ Anniversary data saved successfully")
             
             // 验证保存结果
             if let savedData = userDefaults.data(forKey: anniversaryKey) {
-                print("🔍 验证保存结果：数据大小 \(savedData.count) 字节")
+                print("🔍 Verification result: data size \(savedData.count) bytes")
             }
         } catch {
-            print("❌ 纪念日数据保存失败: \(error)")
+            print("❌ Failed to save anniversary data: \(error)")
         }
     }
     
     // 加载纪念日数据
     func loadAnniversaries() {
-        print("📖 开始加载纪念日数据...")
-        print("🔑 使用的键名: \(anniversaryKey)")
+        print("📖 Starting to load anniversary data...")
+        print("🔑 Loading anniversary data...")
         
         // 检查 UserDefaults 中是否有数据
         if userDefaults.object(forKey: anniversaryKey) != nil {
-            print("🔍 在 UserDefaults 中找到数据对象")
+            print("🔍 Found data object in UserDefaults")
         } else {
-            print("🔍 UserDefaults 中没有找到数据对象")
+            print("🔍 No data object found in UserDefaults")
         }
         
         if let data = userDefaults.data(forKey: anniversaryKey) {
-            print("📊 从 UserDefaults 获取到数据，大小: \(data.count) 字节")
+            print("📊 Retrieved data from UserDefaults, size: \(data.count) bytes")
             
             do {
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
                 let decoded = try decoder.decode([AnniversaryItem].self, from: data)
                 anniversaryItems = decoded
-                print("✅ 从 UserDefaults 成功加载 \(anniversaryItems.count) 条纪念日记录")
+                print("✅ Successfully loaded \(anniversaryItems.count) anniversary records from UserDefaults")
                 
-                // 打印每条记录的基本信息
-                for (index, item) in anniversaryItems.enumerated() {
-                    print("   📝 纪念日 \(index + 1): ID=\(item.id), 事件=\(item.event), 日期=\(item.date)")
-                }
+                // Log successful loading without sensitive details
+                print("   📝 Loaded \(anniversaryItems.count) anniversary records")
             } catch {
-                print("❌ UserDefaults 解码失败: \(error)")
-                print("🔍 使用默认数据...")
+                print("❌ UserDefaults decoding failed: \(error)")
+                print("🔍 Using default data...")
                 loadDefaultAnniversaries()
             }
         } else {
-            print("❌ UserDefaults 中没有找到纪念日数据，使用默认数据...")
+            print("❌ No anniversary data found in UserDefaults, using default data...")
             loadDefaultAnniversaries()
         }
     }
     
-    // 加载默认纪念日数据
+    // Load default anniversary data
     private func loadDefaultAnniversaries() {
-        print("📝 加载默认纪念日数据...")
-        // 使用固定的UUID，确保应用重启后ID保持一致
+        print("📝 Loading default anniversary data...")
+        // Use fixed UUIDs to ensure IDs remain consistent after app restart
         let defaultBirthdayId = UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
         let defaultNewYearId = UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()
         
         anniversaryItems = [
-            AnniversaryItem(id: defaultBirthdayId, event: "生日", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
-            AnniversaryItem(id: defaultNewYearId, event: "元旦", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
+            AnniversaryItem(id: defaultBirthdayId, event: "Birthday", date: Date().addingTimeInterval(86400 * 2), color: .orange, icon: "🎂", createdAt: Date().addingTimeInterval(-86400 * 5)),
+            AnniversaryItem(id: defaultNewYearId, event: "New Year", date: Date().addingTimeInterval(86400 * 10), color: .blue, icon: "🎉", createdAt: Date().addingTimeInterval(-86400 * 2))
         ]
         saveAnniversaries()
     }
     
     // 添加纪念日
     func addAnniversary(_ item: AnniversaryItem) {
-        print("➕ 添加纪念日: ID=\(item.id), 事件=\(item.event)")
+        print("➕ Adding anniversary...")
         anniversaryItems.append(item)
-        print("📊 添加后总记录数: \(anniversaryItems.count)")
+        print("📊 Total records after adding: \(anniversaryItems.count)")
         saveAnniversaries()
     }
     
@@ -2816,23 +2814,23 @@ class ThoughtPersistenceService: ObservableObject {
     
     // 验证保存的数据
     private func verifySavedData() {
-        print("🔍 验证保存的数据...")
+        print("🔍 Verifying saved data...")
         
         // 检查 UserDefaults
         if let data = userDefaults.data(forKey: thoughtsKey) {
-            print("✅ UserDefaults 验证成功，数据大小: \(data.count) 字节")
+            print("✅ UserDefaults verification successful, data size: \(data.count) bytes")
             
             // 尝试解码验证
             do {
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
                 let decoded = try decoder.decode([ThoughtItem].self, from: data)
-                print("✅ 数据解码验证成功，包含 \(decoded.count) 条记录")
+                print("✅ Data decoding verification successful, contains \(decoded.count) records")
             } catch {
-                print("❌ 数据解码验证失败: \(error)")
+                print("❌ Data decoding verification failed: \(error)")
             }
         } else {
-            print("❌ UserDefaults 验证失败，没有找到数据")
+            print("❌ UserDefaults verification failed, no data found")
         }
         
         // 检查文件备份
@@ -2841,9 +2839,9 @@ class ThoughtPersistenceService: ObservableObject {
             if fileManager.fileExists(atPath: fileURL.path) {
                 let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path)
                 let fileSize = attributes?[.size] as? Int64 ?? 0
-                print("✅ 文件备份验证成功，文件大小: \(fileSize) 字节")
+                print("✅ File backup verification successful, file size: \(fileSize) bytes")
             } else {
-                print("❌ 文件备份验证失败，备份文件不存在")
+                print("❌ File backup verification failed, backup file does not exist")
             }
         }
     }
@@ -2910,7 +2908,7 @@ class ThoughtPersistenceService: ObservableObject {
     // 添加新的时光记录
     func addThought(_ thought: ThoughtItem) {
         thoughts.insert(thought, at: 0)
-        print("添加时光记录: \(thought.content.prefix(20))...")
+        print("Adding thought record...")
         saveThoughts()
     }
     
@@ -3041,7 +3039,7 @@ class ThoughtPersistenceService: ObservableObject {
             saveThoughts()
             return true
         } catch {
-            print("导入失败: \(error)")
+            print("Import failed: \(error)")
             return false
         }
     }
@@ -3057,7 +3055,7 @@ class ThoughtPersistenceService: ObservableObject {
             try jsonString.write(to: backupURL, atomically: true, encoding: .utf8)
             return backupURL
         } catch {
-            print("备份失败: \(error)")
+            print("Backup failed: \(error)")
             return nil
         }
     }
@@ -3068,7 +3066,7 @@ class ThoughtPersistenceService: ObservableObject {
             let jsonString = try String(contentsOf: backupURL, encoding: .utf8)
             return importThoughtsFromJSON(jsonString)
         } catch {
-            print("恢复失败: \(error)")
+            print("Restore failed: \(error)")
             return false
         }
     }
