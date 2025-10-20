@@ -38,7 +38,7 @@ struct AddAnniversaryView: View {
     
     // 10个主题色
     let colors: [Color] = [
-        .orange, .yellow, .pink, .blue, .green, .purple, .red, .teal, .mint, .indigo
+        .orange, .pink, .blue, .green, .purple, .yellow, .teal, .indigo, .brown, .cyan
     ]
     // 15个图标
     let icons: [String] = ["🎂", "🎉", "🌸", "🎁", "🐱", "🍰", "🎈", "🌞", "🌟", "🍀", "🦄", "🍎", "🍩", "🍔", "🍕"]
@@ -105,7 +105,7 @@ struct AddAnniversaryView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "textformat")
                                         .font(.system(size: 18, weight: .medium))
-                                        .foregroundColor(selectedColor)
+                                        .foregroundColor(.orange)
                                         .frame(width: 20, height: 20)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
@@ -131,7 +131,7 @@ struct AddAnniversaryView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "calendar")
                                         .font(.system(size: 18, weight: .medium))
-                                        .foregroundColor(selectedColor)
+                                        .foregroundColor(.orange)
                                         .frame(width: 20, height: 20)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
@@ -157,7 +157,7 @@ struct AddAnniversaryView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "paintpalette")
                                         .font(.system(size: 18, weight: .medium))
-                                        .foregroundColor(selectedColor)
+                                        .foregroundColor(.orange)
                                         .frame(width: 20, height: 20)
                                     
                                     Text("主题色彩".localized)
@@ -203,7 +203,7 @@ struct AddAnniversaryView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "face.smiling")
                                         .font(.system(size: 18, weight: .medium))
-                                        .foregroundColor(selectedColor)
+                                        .foregroundColor(.orange)
                                         .frame(width: 20, height: 20)
                                     
                                     Text("选择图标".localized)
@@ -276,13 +276,13 @@ struct AddAnniversaryView: View {
                                 .fill(
                                     event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 
                                     Color.gray : 
-                                    selectedColor
+                                    Color.orange
                                 )
                         )
                         .shadow(
                             color: event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 
                             Color.clear : 
-                            selectedColor.opacity(0.25), 
+                            Color.orange.opacity(0.25), 
                             radius: 6, x: 0, y: 3
                         )
                     }
