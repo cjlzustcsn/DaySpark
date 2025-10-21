@@ -45,6 +45,7 @@ struct AnniversaryItem: Identifiable, Codable {
         let red = try container.decode(Double.self, forKey: .colorRed)
         let green = try container.decode(Double.self, forKey: .colorGreen)
         let blue = try container.decode(Double.self, forKey: .colorBlue)
+        print("🎨 Decoding color: R=\(red), G=\(green), B=\(blue)")
         color = Color(red: red, green: green, blue: blue)
     }
     
@@ -58,16 +59,18 @@ struct AnniversaryItem: Identifiable, Codable {
         try container.encode(isPinned, forKey: .isPinned)
         
         // Convert Color to RGB values
-        if let components = color.cgColor?.components {
-            try container.encode(components[0], forKey: .colorRed)
-            try container.encode(components[1], forKey: .colorGreen)
-            try container.encode(components[2], forKey: .colorBlue)
-        } else {
-            // Default values
-            try container.encode(0.5, forKey: .colorRed)
-            try container.encode(0.5, forKey: .colorGreen)
-            try container.encode(0.5, forKey: .colorBlue)
-        }
+        let uiColor = UIColor(color)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        print("🎨 Encoding color: R=\(red), G=\(green), B=\(blue)")
+        try container.encode(Double(red), forKey: .colorRed)
+        try container.encode(Double(green), forKey: .colorGreen)
+        try container.encode(Double(blue), forKey: .colorBlue)
     }
 }
 
@@ -1498,9 +1501,9 @@ struct AppleBreathingAnniversaryCard: View {
                         let isFuture = item.date > Date()
                         
                         ProgressView(value: progress)
-                            .accentColor(isFuture ? Color.orange : Color.green)
+                            .tint(isFuture ? item.color : item.color.opacity(0.7))
                             .scaleEffect(x: 1, y: 1.5, anchor: .center)
-                            .modifier(AppleBreathingProgressModifier(color: isFuture ? Color.orange : Color.green))
+                            .modifier(AppleBreathingProgressModifier(color: isFuture ? item.color : item.color.opacity(0.7)))
                         
                         HStack {
                             Text(isFuture ? "还有" : "已陪伴")
@@ -1509,7 +1512,7 @@ struct AppleBreathingAnniversaryCard: View {
                             Spacer()
                             Text("\(abs(daysLeft))天")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(isFuture ? Color.orange : Color.green)
+                                .foregroundColor(isFuture ? item.color : item.color.opacity(0.7))
                         }
                     }
                 }
