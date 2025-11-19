@@ -1983,10 +1983,6 @@ struct AppleBreathingEncourageCard: View {
                 }
             
             VStack(spacing: 24) {
-                Text("✨ 今日抽签 ✨")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.primary)
-                
                 Text(encourageText)
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.primary)
@@ -2406,6 +2402,34 @@ struct AppleBreathingActionButton: View {
     }
 }
 
+// MARK: - 抽签频率限制管理
+class LuckyDrawLimitManager {
+    static let shared = LuckyDrawLimitManager()
+    
+    private let userDefaults = UserDefaults.standard
+    private let storageKey = "LuckyDrawLimitManager.lastDrawDates"
+    private var lastDrawDates: [String: TimeInterval] = [:]
+    
+    private init() {
+        if let stored = userDefaults.dictionary(forKey: storageKey) as? [String: TimeInterval] {
+            lastDrawDates = stored
+        }
+    }
+    
+    func canDrawToday(for anniversaryId: UUID) -> Bool {
+        guard let timestamp = lastDrawDates[anniversaryId.uuidString] else {
+            return true
+        }
+        let lastDate = Date(timeIntervalSince1970: timestamp)
+        return !Calendar.current.isDate(lastDate, inSameDayAs: Date())
+    }
+    
+    func registerDraw(for anniversaryId: UUID) {
+        lastDrawDates[anniversaryId.uuidString] = Date().timeIntervalSince1970
+        userDefaults.set(lastDrawDates, forKey: storageKey)
+    }
+}
+
 #Preview {
     ContentView()
 }
@@ -2422,6 +2446,7 @@ struct AnniversaryDetailView: View {
     @State private var showEncourageCard = false
     @State private var encourageText = ""
     @State private var isAnimatingButton = false
+    @State private var showLuckyDrawLimitAlert = false
     
     // 呼吸动效状态
     @State private var headerBreathingScale: CGFloat = 1.0
@@ -2533,10 +2558,16 @@ struct AnniversaryDetailView: View {
             AppleBreathingFloatingButton(
                 isAnimatingButton: isAnimatingButton,
                 onButtonTapped: {
+                    guard LuckyDrawLimitManager.shared.canDrawToday(for: item.id) else {
+                        showLuckyDrawLimitAlert = true
+                        return
+                    }
+                    
                     if !isAnimatingButton && !showEncourageCard {
                         isAnimatingButton = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                             encourageText = encourages.randomElement() ?? "你很棒！"
+                            LuckyDrawLimitManager.shared.registerDraw(for: item.id)
                             showEncourageCard = true
                             isAnimatingButton = false
                         }
@@ -2554,7 +2585,7 @@ struct AnniversaryDetailView: View {
                     onSave: {
                         let newThought = ThoughtItem(
                             id: UUID(),
-                            content: "✨ 今日抽签：\(encourageText)",
+                            content: encourageText,
                             createdAt: Date(),
                             anniversaryId: item.id
                         )
@@ -2563,6 +2594,11 @@ struct AnniversaryDetailView: View {
                     }
                 )
             }
+        }
+        .alert("今天已经抽过啦".localized, isPresented: $showLuckyDrawLimitAlert) {
+            Button("好的".localized, role: .cancel) { }
+        } message: {
+            Text("每天只能抽签一次，明天再来吧".localized)
         }
         .onAppear {
             startBreathingAnimations()

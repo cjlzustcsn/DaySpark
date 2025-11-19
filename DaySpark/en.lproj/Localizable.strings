@@ -55,7 +55,9 @@
 
 // Lucky draw
 "抽签" = "Lucky Draw";
-"✨ 今日抽签 ✨" = "✨ Today's Lucky Draw ✨";
+"今天已经抽过啦" = "You've already drawn today";
+"每天只能抽签一次，明天再来吧" = "You can draw only once per day. Come back tomorrow.";
+"好的" = "OK";
 "关闭" = "Close";
 
 // Statistics
