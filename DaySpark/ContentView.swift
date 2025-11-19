@@ -2454,15 +2454,7 @@ struct AnniversaryDetailView: View {
     @State private var floatingLights: [FloatingLight] = []
     
     // Encouragement messages
-    let encourages = [
-        "You're amazing!",
-        "Keep going, tomorrow will be better!",
-        "Believe in yourself, you deserve to be loved.",
-        "Every day is worth looking forward to.",
-        "Your efforts will be seen.",
-        "Be gentle with yourself.",
-        "Don't worry, sunshine comes after the storm."
-    ]
+    let encourages = EncouragementLibrary.messages
     
     var body: some View {
         ZStack {
