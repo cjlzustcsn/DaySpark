@@ -22,6 +22,8 @@
 "还有" = "还有";
 "已陪伴" = "已陪伴";
 "天" = "天";
+"day_single" = "天";
+"day_plural" = "天";
 
 // Add/Edit Anniversary
 "编辑纪念日" = "编辑纪念日";

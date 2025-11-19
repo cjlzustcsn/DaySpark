@@ -22,6 +22,8 @@
 "还有" = "In";
 "已陪伴" = "Been";
 "天" = "days";
+"day_single" = "day";
+"day_plural" = "days";
 
 // Add/Edit Anniversary
 "编辑纪念日" = "Edit Anniversary";

@@ -7,6 +7,24 @@
 
 import SwiftUI
 
+private func formattedDayCount(_ count: Int) -> String {
+    let normalizedCount = abs(count)
+    let languageCode = Locale.current.languageCode ?? ""
+    let dayKey = normalizedCount == 1 ? "day_single" : "day_plural"
+    let dayWord = dayKey.localized
+    
+    if languageCode.hasPrefix("zh") {
+        return "\(normalizedCount)\(dayWord)"
+    } else {
+        if normalizedCount == 0 {
+            let zeroWord = "day_single".localized
+            return "\(normalizedCount)\(zeroWord)"
+        } else {
+            return "\(normalizedCount) \(dayWord)"
+        }
+    }
+}
+
 // AnniversaryItem data structure
 struct AnniversaryItem: Identifiable, Codable {
     let id: UUID
@@ -1146,7 +1164,7 @@ struct AnniversaryItemView: View {
                     Text("还有")
                         .font(.caption)
                         .foregroundColor(.gray)
-                    Text("\(abs(daysLeft))天")
+                    Text(formattedDayCount(daysLeft))
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.3))
@@ -1154,7 +1172,7 @@ struct AnniversaryItemView: View {
                     Text("已陪伴")
                         .font(.caption)
                         .foregroundColor(.gray)
-                    Text("\(abs(daysLeft))天")
+                    Text(formattedDayCount(daysLeft))
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.4))
@@ -1510,7 +1528,7 @@ struct AppleBreathingAnniversaryCard: View {
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Text("\(abs(daysLeft))天")
+                        Text(formattedDayCount(daysLeft))
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(isFuture ? item.color : item.color.opacity(0.7))
                         }
@@ -2305,7 +2323,7 @@ struct AppleBreathingDetailCardView: View {
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text("\(abs(daysLeft))天")
+                        Text(formattedDayCount(daysLeft))
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(isFuture ? Color.orange : Color.green)
                     }
