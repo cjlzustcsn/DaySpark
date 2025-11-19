@@ -2312,11 +2312,12 @@ struct AppleBreathingDetailCardView: View {
                     let progress = calculateProgress(for: item.date)
                     let daysLeft = Calendar.current.dateComponents([.day], from: Date(), to: item.date).day ?? 0
                     let isFuture = item.date > Date()
+                    let progressColor = isFuture ? item.color : item.color.opacity(0.7)
                     
                     ProgressView(value: progress)
-                        .accentColor(isFuture ? Color.orange : Color.green)
+                        .tint(progressColor)
                         .scaleEffect(x: 1, y: 1.5, anchor: .center)
-                        .modifier(AppleBreathingProgressModifier(color: isFuture ? Color.orange : Color.green))
+                        .modifier(AppleBreathingProgressModifier(color: progressColor))
                     
                     HStack {
                         Text(isFuture ? "还有" : "已陪伴")
@@ -2325,7 +2326,7 @@ struct AppleBreathingDetailCardView: View {
                         Spacer()
                         Text(formattedDayCount(daysLeft))
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(isFuture ? Color.orange : Color.green)
+                            .foregroundColor(progressColor)
                     }
                 }
             }
