@@ -63,7 +63,6 @@ struct AnniversaryItem: Identifiable, Codable {
         let red = try container.decode(Double.self, forKey: .colorRed)
         let green = try container.decode(Double.self, forKey: .colorGreen)
         let blue = try container.decode(Double.self, forKey: .colorBlue)
-        print("🎨 Decoding color: R=\(red), G=\(green), B=\(blue)")
         color = Color(red: red, green: green, blue: blue)
     }
     
@@ -84,8 +83,6 @@ struct AnniversaryItem: Identifiable, Codable {
         var alpha: CGFloat = 0
         
         uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        
-        print("🎨 Encoding color: R=\(red), G=\(green), B=\(blue)")
         try container.encode(Double(red), forKey: .colorRed)
         try container.encode(Double(green), forKey: .colorGreen)
         try container.encode(Double(blue), forKey: .colorBlue)
@@ -2702,64 +2699,35 @@ class AnniversaryPersistenceService: ObservableObject {
     
     // 保存纪念日数据
     func saveAnniversaries() {
-        print("💾 Starting to save anniversary data, current count: \(anniversaryItems.count)")
-        
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             let encoded = try encoder.encode(anniversaryItems)
             userDefaults.set(encoded, forKey: anniversaryKey)
             userDefaults.synchronize() // 强制同步到磁盘
-            
-            print("✅ Anniversary data saved successfully")
-            
-            // 验证保存结果
-            if let savedData = userDefaults.data(forKey: anniversaryKey) {
-                print("🔍 Verification result: data size \(savedData.count) bytes")
-            }
         } catch {
-            print("❌ Failed to save anniversary data: \(error)")
+            // 生产环境不输出调试信息
         }
     }
     
     // 加载纪念日数据
     func loadAnniversaries() {
-        print("📖 Starting to load anniversary data...")
-        print("🔑 Loading anniversary data...")
-        
-        // 检查 UserDefaults 中是否有数据
-        if userDefaults.object(forKey: anniversaryKey) != nil {
-            print("🔍 Found data object in UserDefaults")
-        } else {
-            print("🔍 No data object found in UserDefaults")
-        }
-        
         if let data = userDefaults.data(forKey: anniversaryKey) {
-            print("📊 Retrieved data from UserDefaults, size: \(data.count) bytes")
-            
             do {
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
                 let decoded = try decoder.decode([AnniversaryItem].self, from: data)
                 anniversaryItems = decoded
-                print("✅ Successfully loaded \(anniversaryItems.count) anniversary records from UserDefaults")
-                
-                // Log successful loading without sensitive details
-                print("   📝 Loaded \(anniversaryItems.count) anniversary records")
             } catch {
-                print("❌ UserDefaults decoding failed: \(error)")
-                print("🔍 Using default data...")
                 loadDefaultAnniversaries()
             }
         } else {
-            print("❌ No anniversary data found in UserDefaults, using default data...")
             loadDefaultAnniversaries()
         }
     }
     
     // Load default anniversary data
     private func loadDefaultAnniversaries() {
-        print("📝 Loading default anniversary data...")
         // Use fixed UUIDs to ensure IDs remain consistent after app restart
         let defaultBirthdayId = UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
         let defaultNewYearId = UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()
@@ -2773,9 +2741,7 @@ class AnniversaryPersistenceService: ObservableObject {
     
     // 添加纪念日
     func addAnniversary(_ item: AnniversaryItem) {
-        print("➕ Adding anniversary...")
         anniversaryItems.append(item)
-        print("📊 Total records after adding: \(anniversaryItems.count)")
         saveAnniversaries()
     }
     
@@ -2862,40 +2828,6 @@ class ThoughtPersistenceService: ObservableObject {
         saveToFile()
     }
     
-    // 验证保存的数据
-    private func verifySavedData() {
-        print("🔍 Verifying saved data...")
-        
-        // 检查 UserDefaults
-        if let data = userDefaults.data(forKey: thoughtsKey) {
-            print("✅ UserDefaults verification successful, data size: \(data.count) bytes")
-            
-            // 尝试解码验证
-            do {
-                let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
-                let decoded = try decoder.decode([ThoughtItem].self, from: data)
-                print("✅ Data decoding verification successful, contains \(decoded.count) records")
-            } catch {
-                print("❌ Data decoding verification failed: \(error)")
-            }
-        } else {
-            print("❌ UserDefaults verification failed, no data found")
-        }
-        
-        // 检查文件备份
-        if let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let fileURL = documentsPath.appendingPathComponent("thoughts_backup.json")
-            if fileManager.fileExists(atPath: fileURL.path) {
-                let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path)
-                let fileSize = attributes?[.size] as? Int64 ?? 0
-                print("✅ File backup verification successful, file size: \(fileSize) bytes")
-            } else {
-                print("❌ File backup verification failed, backup file does not exist")
-            }
-        }
-    }
-    
     // 保存到文件系统
     private func saveToFile() {
         guard let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
@@ -2958,7 +2890,6 @@ class ThoughtPersistenceService: ObservableObject {
     // 添加新的时光记录
     func addThought(_ thought: ThoughtItem) {
         thoughts.insert(thought, at: 0)
-        print("Adding thought record...")
         saveThoughts()
     }
     
@@ -3089,7 +3020,6 @@ class ThoughtPersistenceService: ObservableObject {
             saveThoughts()
             return true
         } catch {
-            print("Import failed: \(error)")
             return false
         }
     }
@@ -3105,7 +3035,6 @@ class ThoughtPersistenceService: ObservableObject {
             try jsonString.write(to: backupURL, atomically: true, encoding: .utf8)
             return backupURL
         } catch {
-            print("Backup failed: \(error)")
             return nil
         }
     }
@@ -3116,7 +3045,6 @@ class ThoughtPersistenceService: ObservableObject {
             let jsonString = try String(contentsOf: backupURL, encoding: .utf8)
             return importThoughtsFromJSON(jsonString)
         } catch {
-            print("Restore failed: \(error)")
             return false
         }
     }
